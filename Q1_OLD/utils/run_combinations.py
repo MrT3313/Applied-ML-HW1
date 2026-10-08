@@ -11,9 +11,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.pipeline import Pipeline
 
-from Q1.consts import SHORT_NAMES
-from Q1.utils.create_pipeline import add_model_to_pipeline, create_preprocessing, preprocessing_labels, step_label
-from Q1.utils.run_experiment import cross_validate_means, seed_model, sort_results
+from Q1_OLD.consts import SHORT_NAMES
+from Q1_OLD.utils.create_pipeline import add_model_to_pipeline, create_preprocessing, preprocessing_labels, step_label
+from Q1_OLD.utils.run_experiment import cross_validate_means, seed_model, sort_results
 
 NONE = "none"
 

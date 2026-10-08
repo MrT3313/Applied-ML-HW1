@@ -9,7 +9,7 @@ from sklearn.base import TransformerMixin, RegressorMixin, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
-from Q1.consts import SHORT_NAMES
+from Q1_OLD.consts import SHORT_NAMES
 
 Step =Literal["passthrough"] | TransformerMixin
 

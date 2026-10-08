@@ -8,8 +8,8 @@ from sklearn.base import RegressorMixin, clone
 from sklearn.model_selection import BaseCrossValidator, cross_validate
 from sklearn.pipeline import Pipeline
 
-from Q1.utils.complete_row_folds import Folds
-from Q1.utils.create_pipeline import add_model_to_pipeline, preprocessing_labels, preprocessing_name
+from Q1_OLD.utils.complete_row_folds import Folds
+from Q1_OLD.utils.create_pipeline import add_model_to_pipeline, preprocessing_labels, preprocessing_name
 
 # keyed by (model name, preprocessing name), ex: ("ridge", "scale-StandardScaler")
 Pipelines = dict[tuple[str, str], Pipeline]

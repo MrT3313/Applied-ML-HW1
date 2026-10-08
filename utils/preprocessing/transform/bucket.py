@@ -2,7 +2,7 @@ from pandas import Series
 from sklearn.preprocessing import KBinsDiscretizer
 
 from typing import Literal, Optional
-from Q1.consts import HIST_BINS
+from Q1_OLD.consts import HIST_BINS
 
 def bucket_transform(
 	*,
