@@ -18,6 +18,7 @@ COLUMNS = {
 	'NA': {"col": 'Negative affect', "short_name": "Neg affect"},
 }
 TARGET = COLUMNS['LL']['col']
+SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
 
 HIST_BINS = 30
 

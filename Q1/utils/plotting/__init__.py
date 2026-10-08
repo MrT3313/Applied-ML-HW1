@@ -10,6 +10,8 @@ from Q1.utils.plotting.histogram import histogram
 from Q1.utils.plotting.scatterplot import scatterplot
 from Q1.utils.plotting.qq import qq
 from Q1.utils.plotting.box_plot import box_plot
+from Q1.utils.plotting.scatter_matrix import scatter_matrix
+from Q1.utils.plotting.correlation_matrix import correlation_matrix
 from Q1.utils.statistics.find_threshold import (
 	THRESHOLD_KINDS,
 	ThresholdKind,
@@ -85,4 +87,6 @@ __all__ = [
 	'scatterplot',
 	'qq',
 	'box_plot',
+	'scatter_matrix',
+	'correlation_matrix',
 ]
