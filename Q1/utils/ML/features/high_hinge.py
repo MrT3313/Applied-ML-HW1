@@ -9,6 +9,9 @@ class HighHinge(BaseEstimator, TransformerMixin):
 	Args:
 		t: Hinge point.
 		keep_raw: Output [x, max(0, x - t)] (a linear spline with a knot at t) instead of the hinge alone.
+
+	Attributes:
+		n_features_in_: Number of input columns, set by fit.
 	"""
 
 	def __init__(self, t: float = 0.5, keep_raw: bool = False):
@@ -16,9 +19,24 @@ class HighHinge(BaseEstimator, TransformerMixin):
 		self.keep_raw = keep_raw
 
 	def fit(self, X: ArrayLike, y: ArrayLike = None) -> "HighHinge":
+		self.n_features_in_ = np.asarray(X).shape[1]
 		return self
 
 	def transform(self, X: ArrayLike) -> np.ndarray:
 		X = np.asarray(X, dtype=float)
 		hinge = np.maximum(0.0, X - self.t)
 		return np.hstack([X, hinge]) if self.keep_raw else hinge
+
+	def get_feature_names_out(self, input_features: ArrayLike = None) -> np.ndarray:
+		"""Name each output column, in the order transform returns them.
+
+		Args:
+			input_features: Input column names. None uses x0, x1, ... for the n_features_in_ columns seen by fit.
+
+		Returns:
+			"{col}__hinge_{t:g}" for each input column, after the raw column names when keep_raw.
+		"""
+		if input_features is None:
+			input_features = [f"x{i}" for i in range(self.n_features_in_)]
+		names = [f"{col}__hinge_{self.t:g}" for col in input_features]
+		return np.asarray(list(input_features) + names if self.keep_raw else names, dtype=object)

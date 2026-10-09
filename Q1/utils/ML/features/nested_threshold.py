@@ -18,7 +18,7 @@ class GuardedGridSearch(BaseEstimator, RegressorMixin):
 		pipeline: Pipeline holding the parameter.
 		param: Pipeline parameter to search, or a tuple of parameters searched together.
 		grid: Candidate values. When param is a tuple, each item is a tuple of the same length, one value per parameter.
-		seed: random_state of the shuffled inner KFold.
+		random_state: random_state of the shuffled inner KFold.
 		n_splits: Number of inner folds.
 		min_group_frac: Smallest share of the training rows allowed on each side of a threshold t (x < t and
 			x >= t). When param is a tuple, every value in a grid item must pass. Needs a single column X. None
@@ -31,14 +31,14 @@ class GuardedGridSearch(BaseEstimator, RegressorMixin):
 		*,
 		param: str | tuple[str, ...],
 		grid: np.ndarray | list[float] | list[tuple[float, ...]],
-		seed: int,
+		random_state: int,
 		n_splits: int,
 		min_group_frac: float | None,
 	):
 		self.pipeline = pipeline
 		self.param = param
 		self.grid = grid
-		self.seed = seed
+		self.random_state = random_state
 		self.n_splits = n_splits
 		self.min_group_frac = min_group_frac
 
@@ -68,7 +68,7 @@ class GuardedGridSearch(BaseEstimator, RegressorMixin):
 			self.pipeline,
 			param_grid=param_grid,
 			scoring=SCORERS["rmse"],
-			cv=KFold(n_splits=self.n_splits, shuffle=True, random_state=self.seed),
+			cv=KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state),
 			n_jobs=1,  # the outer cross validation already runs folds in parallel
 			refit=True,
 		).fit(X, y)
@@ -84,7 +84,7 @@ def nested_threshold(
 	*,
 	param: str | tuple[str, ...],
 	grid: np.ndarray | list[float] | list[tuple[float, ...]] = THRESHOLD_GRID,
-	seed: int = SEED,
+	random_state: int = SEED,
 	n_splits: int = 4,
 	min_group_frac: float | None = MIN_GROUP_FRAC,
 ) -> GuardedGridSearch:
@@ -97,7 +97,7 @@ def nested_threshold(
 			searched together, ex ("features__lo", "features__hi").
 		grid: Candidate values. When param is a tuple, each item is a tuple of the same length, one value per
 			parameter, ex (lo, hi) pairs.
-		seed: random_state of the shuffled inner KFold.
+		random_state: random_state of the shuffled inner KFold.
 		n_splits: Number of inner folds.
 		min_group_frac: Smallest share of the training fold's rows allowed on each side of a threshold, the same
 			guard as Q1B's find_threshold. When param is a tuple, every value in a grid item must pass. None turns
@@ -107,7 +107,7 @@ def nested_threshold(
 		An unfitted search that picks the value with the lowest inner RMSE and refits on the whole training fold.
 	"""
 	return GuardedGridSearch(
-		pipeline, param=param, grid=grid, seed=seed, n_splits=n_splits, min_group_frac=min_group_frac,
+		pipeline, param=param, grid=grid, random_state=random_state, n_splits=n_splits, min_group_frac=min_group_frac,
 	)
 
 
