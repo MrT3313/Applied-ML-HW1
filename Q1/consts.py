@@ -19,9 +19,3 @@ COLUMNS = {
 }
 TARGET = COLUMNS['LL']['col']
 SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
-
-HIST_BINS = 30
-
-SEED = 42
-FOLD_SEEDS = [42, 0, 1, 2, 3]
-

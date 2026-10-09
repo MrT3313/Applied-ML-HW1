@@ -7,28 +7,21 @@ TRAIN_PATH = DATA_PATH / 'happiness_data_train.csv'
 MODEL_OUTPUT_DIR = PROJECT_DIR / 'Q1' / 'MODELS'
 
 COLUMNS = {
-	'LL': 'Life Ladder',
-	'LGDP': 'Log GDP per capita',
-	'SS': 'Social support',
-	'HLEAB': 'Healthy life expectancy at birth',
-	'FTMLC': 'Freedom to make life choices',
-	'G': 'Generosity',
-	"POC": 'Perceptions of corruption',
-	'PA': 'Positive affect',
-	'NA': 'Negative affect',
+	'LL': { "col": 'Life Ladder', "short_name": "Ladder" },
+	'LGDP': { "col": 'Log GDP per capita', "short_name": "GDP" },
+	'SS': { "col": 'Social support', "short_name": "Social" },
+	'HLEAB': {"col": 'Healthy life expectancy at birth', "short_name": "Life exp" },
+	'FTMLC': {"col": 'Freedom to make life choices', "short_name": "Freedom" },
+	'G': { "col": 'Generosity', "short_name": "Generosity" },
+	"POC": {"col": 'Perceptions of corruption', "short_name": "Corruption"},
+	'PA': {"col": 'Positive affect', "short_name": "Pos affect"},
+	'NA': {"col": 'Negative affect', "short_name": "Neg affect"},
 }
-
-SHORT_NAMES = {
-    "Life Ladder": "Ladder",
-    "Log GDP per capita": "GDP",
-    "Social support": "Social",
-    "Healthy life expectancy at birth": "Life exp",
-    "Freedom to make life choices": "Freedom",
-    "Generosity": "Generosity",
-    "Perceptions of corruption": "Corruption",
-    "Positive affect": "Pos affect",
-    "Negative affect": "Neg affect",
-}
+TARGET = COLUMNS['LL']['col']
+SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
 
 HIST_BINS = 30
-TARGET = COLUMNS['LL']
+
+SEED = 42
+FOLD_SEEDS = [42, 0, 1, 2, 3]
+
