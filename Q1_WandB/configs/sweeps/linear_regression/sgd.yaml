@@ -1,0 +1,38 @@
+# Sweep: linear regression fit by stochastic gradient descent (SGDRegressor), across its preprocessing, its
+# penalty and its learning rate. entrypoints/sweep.py merges this file over the "sweep" section of
+# configs/base.yaml.
+#
+# "when" limits a parameter to the runs where it means something (see src/grid.py), so no model is trained
+# twice. Runs per preprocessing choice:
+#     no penalty      4   (learning rates)
+#     l2, l1         12   each (3 strengths x 4 learning rates)
+#     elasticnet     36   (3 strengths x 3 mixes x 4 learning rates)
+# 64 x 9 preprocessing choices = 576 runs.
+#
+# The FIRST value of each list defines the baseline run every other run is compared with: complete rows
+# only, standard scaling, plain SGD with no penalty at scikit-learn's default learning rate.
+
+name: linear-regression-sgd           # shown in the Sweeps tab
+method: grid
+parameters:
+  model_kind:
+    value: sgd
+  data_missing:                       # same values as the closed form sweep
+    values: [drop, impute_median, impute_mean]
+  # same values as the closed form sweep, but standard is listed first so that it is the baseline. Without
+  # scaling SGD diverges on this data (errors in the billions), and a baseline like that would make every
+  # other run look like an improvement
+  scaler:
+    values: [standard, none, minmax]
+
+  # the SGD only keys (MODEL_KEYS in src/config.py)
+  sgd_penalty:                        # none = plain SGD, l2 = ridge, l1 = lasso, elasticnet = a mix of both
+    values: [none, l2, l1, elasticnet]
+  sgd_alpha:                          # strength of the penalty
+    values: [0.001, 0.01, 0.1]
+    when: {sgd_penalty: [l2, l1, elasticnet]}     # there is nothing to scale without a penalty
+  sgd_l1_ratio:                       # share of L1 in the mix: nearer 0 is more ridge, nearer 1 more lasso
+    values: [0.15, 0.5, 0.85]
+    when: {sgd_penalty: elasticnet}               # l2 and l1 are not mixes
+  sgd_eta0:                           # starting learning rate. 0.01 is first because it is the default
+    values: [0.01, 0.0001, 0.001, 0.1]

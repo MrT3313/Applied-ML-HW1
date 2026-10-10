@@ -1,0 +1,20 @@
+# Settings shared by everything in this project. Two sections, read by two different programs.
+
+# Read by entrypoints/run.py. This is the starting config of every training run, before the sweep's
+# parameters are laid over it. Keep only what must be identical across all runs here: changing any of these
+# makes new runs incomparable with old ones.
+run:
+  data_train: happiness-train:v0      # dataset artifact name:version to train on (see register_data.py)
+  cv_seeds: [42, 0, 1, 2, 3]          # one shuffled KFold repeat per seed
+  cv_n_splits: 4                      # folds per seed, so 5 x 4 = 20 folds per run
+  seed: 42                            # random_state of any model that shuffles its data (SGD). Not the folds
+
+# Read by entrypoints/sweep.py. Merged under every sweep file, so a sweep file only states what it decides.
+# These are instructions to the W&B sweep controller. They never reach a run's config.
+sweep:
+  program: entrypoints/run.py         # required by W&B. What actually launches a run is command, below
+  metric:                             # the summary value W&B ranks runs by in its sweep panels
+    name: rmse_mean
+    goal: minimize
+  # how the agent starts each run. -m keeps Q1_WandB as the import root, so "from src..." resolves
+  command: ["${env}", "${interpreter}", "-m", "entrypoints.run"]
