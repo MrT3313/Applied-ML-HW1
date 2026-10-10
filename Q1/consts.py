@@ -19,3 +19,7 @@ COLUMNS = {
 }
 TARGET = COLUMNS['LL']['col']
 SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
+
+SEEDS = [42, 0, 1, 2, 3]
+ALPHAS = [0.001, 0.01, 0.1]
+LEARNING_RATES = [0.0001, 0.001, 0.01, 0.1]
