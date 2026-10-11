@@ -3,9 +3,9 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import cross_validate
 
-from Q1.utils.scoring.scorers import GREATER_IS_BETTER, SCORERS
-from Q1.utils.pipelines.make_folds import CVFolds
-from Q1.utils.pipelines.seed_pipeline import seed_pipeline
+from utils.scoring.scorers import GREATER_IS_BETTER, SCORERS
+from utils.pipelines.make_folds import CVFolds
+from utils.pipelines.seed_pipeline import seed_pipeline
 
 
 def evaluate_pipeline(
@@ -15,6 +15,7 @@ def evaluate_pipeline(
 	y: pd.Series,
 	folds: CVFolds,
 	return_estimator: bool = False,
+	seed: int = 42,
 ) -> dict[str, np.ndarray | list]:
 	"""Seed a pipeline and score it on every validation fold with cross_validate and SCORERS.
 
@@ -25,6 +26,7 @@ def evaluate_pipeline(
 		y: Target values, with the same index as X.
 		folds: Folds from make_folds.
 		return_estimator: Also return each fold's fitted estimator (ex to read a search's best_params_).
+		seed: Value seed_pipeline gives to every random_state in the pipeline.
 
 	Returns:
 		One array of per-fold scores per metric, in fold order, each in its natural units (errors positive).
@@ -34,7 +36,7 @@ def evaluate_pipeline(
 	"""
 	assert y.index.equals(X.index), "y and X must have the same index"
 
-	seeded = seed_pipeline(pipeline)
+	seeded = seed_pipeline(pipeline, seed=seed)
 	positions = folds.positions_for(X)
 	scores = cross_validate(
 		seeded, X, y,

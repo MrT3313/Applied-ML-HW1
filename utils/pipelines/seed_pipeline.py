@@ -1,9 +1,7 @@
 from sklearn.base import BaseEstimator, clone
 
-from Q1.consts import SEEDS
 
-
-def seed_pipeline(pipeline: BaseEstimator, *, seed: int = SEEDS[0]) -> BaseEstimator:
+def seed_pipeline(pipeline: BaseEstimator, *, seed: int = 42) -> BaseEstimator:
 	"""Clone a pipeline and set every random_state in it, nested steps included, to seed.
 
 	Args:

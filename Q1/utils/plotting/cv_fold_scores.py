@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from Q1.consts import SEEDS
-from Q1.utils.scoring.standard_error import standard_error
+from utils.scoring.standard_error import standard_error
 
 
 def cv_fold_scores(*, baseline, compare, baseline_name="baseline", compare_name="compare", seeds=SEEDS, n_splits=4):

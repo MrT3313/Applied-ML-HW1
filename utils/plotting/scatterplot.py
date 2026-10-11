@@ -7,7 +7,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
-from Q1.utils.statistics.find_threshold import ThresholdResult
+from utils.statistics.find_threshold import ThresholdResult
 
 # Each fit gets its own colorblind-safe color, and the threshold fits also get their own line style,
 # so lines stay distinguishable where they overlap.

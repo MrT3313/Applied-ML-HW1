@@ -3,7 +3,7 @@ import pandas as pd
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 
-from Q1.utils.scoring.scorers import GREATER_IS_BETTER
+from utils.scoring.scorers import GREATER_IS_BETTER
 
 
 def results_df(

@@ -3,14 +3,12 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from Q1.consts import TARGET
-
 
 def box_plot(
 	*,
 	df: pd.DataFrame,
 	feature: str,
-	target: Optional[str] = TARGET,
+	target: Optional[str] = None,
 	threshold: Optional[float] = None,
 	ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
@@ -19,7 +17,7 @@ def box_plot(
 	Args:
 		df: DataFrame holding both columns. Missing values in the plotted columns are dropped.
 		feature: Column plotted on its own when threshold is omitted, otherwise used to split the rows into groups.
-		target: Column whose distribution is plotted for each group. Unused when threshold is omitted.
+		target: Column whose distribution is plotted for each group. Required when threshold is given, unused otherwise.
 		threshold: Rows with feature < threshold form the low group; the rest form the high group.
 			The target over all rows is drawn as a third box on the far left.
 			When omitted, a single box of the feature is drawn instead.

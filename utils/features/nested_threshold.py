@@ -3,8 +3,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.pipeline import Pipeline
 
-from Q1.consts import SEEDS
-from Q1.utils.scoring.scorers import SCORERS
+from utils.scoring.scorers import SCORERS
 
 THRESHOLD_GRID = np.round(np.arange(0.05, 0.951, 0.02), 2)
 MIN_GROUP_FRAC = 0.05
@@ -84,7 +83,7 @@ def nested_threshold(
 	*,
 	param: str | tuple[str, ...],
 	grid: np.ndarray | list[float] | list[tuple[float, ...]] = THRESHOLD_GRID,
-	random_state: int = SEEDS[0],
+	random_state: int = 42,
 	n_splits: int = 4,
 	min_group_frac: float | None = MIN_GROUP_FRAC,
 ) -> GuardedGridSearch:
@@ -100,7 +99,7 @@ def nested_threshold(
 		random_state: random_state of the shuffled inner KFold.
 		n_splits: Number of inner folds.
 		min_group_frac: Smallest share of the training fold's rows allowed on each side of a threshold, the same
-			guard as Q1B's find_threshold. When param is a tuple, every value in a grid item must pass. None turns
+			guard as find_threshold. When param is a tuple, every value in a grid item must pass. None turns
 			it off, for parameters that are not thresholds.
 
 	Returns:

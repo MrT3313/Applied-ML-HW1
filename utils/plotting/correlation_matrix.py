@@ -7,8 +7,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 
-from Q1.consts import SHORT_NAMES
-from Q1.utils.statistics.pcc_strength import PCC_THRESHOLDS
+from utils.statistics.pcc_strength import PCC_THRESHOLDS
 
 # Seaborn's perceptually uniform rocket and mako, reversed so |r| = 0 is light and |r| = 1 is near black.
 # Their lightness ramps match, so equal |r| looks equally dark in both triangles, and hue alone tells them apart:
@@ -29,7 +28,7 @@ def correlation_matrix(
 	*,
 	pearson: pd.DataFrame,
 	spearman: pd.DataFrame,
-	labels: Optional[dict[str, str]] = SHORT_NAMES,
+	labels: Optional[dict[str, str]] = None,
 	title: Optional[str] = None,
 	figsize: tuple[float, float] = (11, 7),
 	ax: Optional[plt.Axes] = None,

@@ -5,13 +5,11 @@ import numpy as np
 import pandas as pd
 from pandas.plotting import scatter_matrix as pd_scatter_matrix
 
-from Q1.consts import SHORT_NAMES
-
 
 def scatter_matrix(
 	*,
 	df: pd.DataFrame,
-	labels: Optional[dict[str, str]] = SHORT_NAMES,
+	labels: Optional[dict[str, str]] = None,
 	diagonal: Literal["kde", "hist"] = "kde",
 	title: Optional[str] = None,
 	figsize: tuple[float, float] = (10, 10),

@@ -1,22 +1,24 @@
+from typing import Optional
+
 import pandas as pd
 
-from Q1.utils import rule_of_thumb as RULE_OF_THUMB
+from utils import rule_of_thumb as RULE_OF_THUMB
 
 
-def statistics_df(*, series: pd.Series, target: pd.Series, transpose: bool = False) -> pd.DataFrame:
+def statistics_df(*, series: pd.Series, target: Optional[pd.Series] = None, transpose: bool = False) -> pd.DataFrame:
 	"""Compute statistics for a single column.
 
 	Args:
 		series: Column to summarize.
-		target: Column the series is correlated against.
+		target: Column the series is correlated against. Omit it when the series is the target itself.
 		transpose: If True, return one column per statistic (horizontal) instead
 			of one row per statistic (vertical).
 
 	Returns:
 		A one-column DataFrame named after the column, indexed by statistic:
 		describe() output, missing counts, range, skew and excess kurtosis (with
-		their rule-of-thumb labels), IQR fences, outlier counts, and correlation
-		with the target. Transposed to a single row when `transpose` is True.
+		their rule-of-thumb labels), IQR fences, outlier counts, and (when `target` is given)
+		correlation with the target. Transposed to a single row when `transpose` is True.
 	"""
 	stats = series.describe()
 
@@ -28,7 +30,7 @@ def statistics_df(*, series: pd.Series, target: pd.Series, transpose: bool = Fal
 	lower_fence = q1 - 1.5 * iqr
 	upper_fence = q3 + 1.5 * iqr
 
-	df = pd.DataFrame([{
+	row = {
 		'count': stats['count'],
 		'missing': series.isna().sum(),
 		'% missing': series.isna().mean() * 100,
@@ -53,7 +55,10 @@ def statistics_df(*, series: pd.Series, target: pd.Series, transpose: bool = Fal
 		'IQR upper fence': upper_fence,
 		'outliers below': (series < lower_fence).sum(),
 		'outliers above': (series > upper_fence).sum(),
-		'corr with target': series.corr(target),
-	}], index=[series.name]).round(3)
+	}
+	if target is not None:
+		row['corr with target'] = series.corr(target)
+
+	df = pd.DataFrame([row], index=[series.name]).round(3)
 
 	return df if transpose else df.T
