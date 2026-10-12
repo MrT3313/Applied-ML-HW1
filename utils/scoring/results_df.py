@@ -11,6 +11,7 @@ def results_df(
 	*,
 	baseline: str,
 	holm: bool = False,
+	decimals: int = 3,
 ) -> pd.DataFrame:
 	"""Summarize per-fold scores into one row per intervention, with a noise threshold against the baseline.
 
@@ -20,6 +21,8 @@ def results_df(
 
 	Columns:
 		"{metric} mean" and "{metric} sd": mean and sample sd of each metric over the folds.
+		"train rmse mean": mean rmse on the training rows of each fold, when results holds "train_rmse" (from
+			evaluate_pipeline with return_train_score). Close to "rmse mean" means little overfitting.
 		"Δrmse vs {baseline}": mean of d. Negative means lower error than the baseline.
 		"Δrmse SE": standard error of that mean with the Nadeau and Bengio correction,
 			sqrt(var(d) * (1/J + n_test/n_train)), where J is the fold count and n_test/n_train is the mean ratio of
@@ -45,9 +48,10 @@ def results_df(
 		baseline: Name of the intervention the rmse difference is measured against. It must be in results.
 		holm: Add the "p (Holm)" column and the "significant" verdict. Use it only when results holds the full
 			family of comparisons.
+		decimals: Number of decimals the table is rounded to.
 
 	Returns:
-		One row per intervention, sorted by mean rmse and rounded to 3. The baseline row has Δrmse 0 and NaN for
+		One row per intervention, sorted by mean rmse and rounded to decimals. The baseline row has Δrmse 0 and NaN for
 		SE, Δ / SE and p.
 	"""
 	base = results[baseline]
@@ -67,6 +71,8 @@ def results_df(
 			if metric in scores:
 				row[f"{metric} mean"] = np.mean(scores[metric])
 				row[f"{metric} sd"] = np.std(scores[metric], ddof=1)
+			if metric == "rmse" and "train_rmse" in scores:
+				row["train rmse mean"] = np.mean(scores["train_rmse"])
 
 		if name == baseline:
 			row.update({delta_col: 0.0, "Δrmse SE": np.nan, "Δ / SE": np.nan, "p": np.nan})
@@ -106,4 +112,4 @@ def results_df(
 	metric_cols = [c for c in df.columns if c.endswith(" mean") or c.endswith(" sd")]
 	noise_cols = [delta_col, "Δrmse SE", "Δ / SE", "p"] + (["p (Holm)"] if holm else [])
 	df = df[metric_cols + noise_cols + ["verdict", "folds"]]
-	return df.sort_values("rmse mean").round(3)
+	return df.sort_values("rmse mean").round(decimals)

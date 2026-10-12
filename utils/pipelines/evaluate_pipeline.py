@@ -15,6 +15,7 @@ def evaluate_pipeline(
 	y: pd.Series,
 	folds: CVFolds,
 	return_estimator: bool = False,
+	return_train_score: bool = False,
 	seed: int = 42,
 ) -> dict[str, np.ndarray | list]:
 	"""Seed a pipeline and score it on every validation fold with cross_validate and SCORERS.
@@ -26,13 +27,16 @@ def evaluate_pipeline(
 		y: Target values, with the same index as X.
 		folds: Folds from make_folds.
 		return_estimator: Also return each fold's fitted estimator (ex to read a search's best_params_).
+		return_train_score: Also score each fold's fitted pipeline on its own training rows, to compare with the
+			validation scores (ex to read overfitting or underfitting).
 		seed: Value seed_pipeline gives to every random_state in the pipeline.
 
 	Returns:
 		One array of per-fold scores per metric, in fold order, each in its natural units (errors positive).
 		Also "validation_rows": the validation index labels of each fold, and "n_train" and "n_test": the
 		training and validation row counts of each fold. With return_estimator, also "estimator": the fitted
-		estimators in the same fold order.
+		estimators in the same fold order. With return_train_score, also "train_{metric}": each metric on the
+		training rows of each fold.
 	"""
 	assert y.index.equals(X.index), "y and X must have the same index"
 
@@ -44,6 +48,7 @@ def evaluate_pipeline(
 		cv=positions,
 		n_jobs=-1,
 		return_estimator=return_estimator,
+		return_train_score=return_train_score,
 	)
 	# a greater_is_better=False scorer returns the negated metric, so flip only those back
 	fold_scores = {
@@ -53,6 +58,10 @@ def evaluate_pipeline(
 	fold_scores["validation_rows"] = [X.index[test] for _, test in positions]
 	fold_scores["n_train"] = np.array([len(train) for train, _ in positions])
 	fold_scores["n_test"] = np.array([len(test) for _, test in positions])
+	if return_train_score:
+		for metric in SCORERS:
+			train = scores[f"train_{metric}"]
+			fold_scores[f"train_{metric}"] = train if GREATER_IS_BETTER[metric] else -train
 	if return_estimator:
 		fold_scores["estimator"] = list(scores["estimator"])
 	return fold_scores

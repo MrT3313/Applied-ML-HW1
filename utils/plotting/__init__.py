@@ -17,6 +17,7 @@ from utils.plotting.qq import qq
 from utils.plotting.box_plot import box_plot
 from utils.plotting.scatter_matrix import scatter_matrix
 from utils.plotting.correlation_matrix import correlation_matrix
+from utils.plotting.loss_curve import loss_curve
 
 def single_feature_plots(
 	*,
