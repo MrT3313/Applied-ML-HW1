@@ -15,6 +15,8 @@ from utils.plotting.histogram import histogram
 from utils.plotting.scatterplot import scatterplot
 from utils.plotting.qq import qq
 from utils.plotting.box_plot import box_plot
+from utils.plotting.scatter_matrix import scatter_matrix
+from utils.plotting.correlation_matrix import correlation_matrix
 
 def single_feature_plots(
 	*,
