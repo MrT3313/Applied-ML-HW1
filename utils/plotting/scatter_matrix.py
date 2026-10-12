@@ -35,6 +35,13 @@ def scatter_matrix(
 
 	axes = pd_scatter_matrix(plot_df, figsize=figsize, alpha=alpha, s=s, diagonal=diagonal)
 
+	# pandas labels the top left panel's y ticks with the raw floats, ex 0.6000000000000001
+	if axes.shape[0] > 1:
+		top_left = axes[0, 0]
+		top_left.set_yticklabels([
+			f"{float(label.get_text().replace('−', '-')):.10g}" for label in top_left.get_yticklabels()
+		])
+
 	# only the outer row and column show labels; rotating them keeps long names from overlapping their neighbors
 	for ax in axes.flatten():
 		ax.xaxis.label.set_rotation(45)
