@@ -4,6 +4,7 @@ import pandas as pd
 
 from Q2.utils.plotting.level_counts import level_counts
 from Q2.utils.plotting.level_box_plot import level_box_plot
+from Q2.utils.plotting.predictions_by_date import predictions_by_date
 
 def categorical_feature_plots(
 	*,
@@ -35,4 +36,5 @@ __all__ = [
 
 	'level_counts',
 	'level_box_plot',
+	'predictions_by_date',
 ]
