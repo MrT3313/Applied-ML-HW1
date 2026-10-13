@@ -9,8 +9,7 @@ The big picture:
 	- step:  one flat level below t and another flat level at or above t.
 	- hinge: one straight line below t and a second straight line above t, joined at t.
 
-	fit_threshold fits one of those shapes at a threshold you pick.
-	find_threshold tries every possible threshold and keeps the one that fits best.
+	find_threshold fits one of those shapes at every possible threshold and keeps the one that fits best.
 
 How a fit is graded:
 	Every fit is graded by its squared error: for each row, take (actual - predicted) and square it,
