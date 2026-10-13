@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import ListedColormap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from OLD.utils.statistics.pcc_strength import PCC_THRESHOLDS
 
@@ -14,6 +15,9 @@ from OLD.utils.statistics.pcc_strength import PCC_THRESHOLDS
 # warm (cream to red to plum) for Pearson, cool (mint to teal to indigo) for Spearman.
 PEARSON_CMAP = 'rocket_r'
 SPEARMAN_CMAP = 'mako_r'
+
+COLORBAR_WIDTH = '4%'  # of the heatmap's width
+COLORBAR_GAP = 0.3  # inches of empty space left of each colorbar
 
 
 def _mirrored(name: str) -> ListedColormap:
@@ -37,6 +41,7 @@ def correlation_matrix(
 
 	Each triangle has its own colormap and colorbar, both light at 0 and near black at |r| = 1 with the same
 	lightness in between: warm for Pearson, cool for Spearman. Colorbar ticks mark each PCC_THRESHOLDS cutoff.
+	Both colorbars sit right of the heatmap, Pearson first, with the same gap before each one.
 
 	Args:
 		pearson: Square Pearson correlation matrix, as returned by DataFrame.corr(). Its diagonal of 1s is drawn.
@@ -75,23 +80,34 @@ def correlation_matrix(
 		ax=ax,
 	)
 
+	# the divider carves both colorbars out of the heatmap's right side, at its height, with gaps in inches
+	divider = make_axes_locatable(ax)
+	pearson_cax = divider.append_axes('right', size=COLORBAR_WIDTH, pad=COLORBAR_GAP)
+
 	sns.heatmap(
 		pearson,
 		mask=np.triu(ones, k=1),  # hide above the diagonal; k=1 keeps the diagonal of 1s
 		cmap=_mirrored(PEARSON_CMAP),
+		cbar_ax=pearson_cax,
 		cbar_kws={
 			'label': 'Pearson r, lower left (darker = stronger)',
-			'location': 'left',  # beside the lower left triangle it describes; Spearman's colorbar stays on the right
-			'pad': 0.18,  # leave room for the row labels between the colorbar and the heatmap
 			'ticks': ticks,
 		},
 		**shared,
 	)
 
+	# Spearman's gap starts where Pearson's tick labels and label end, not at the edge of Pearson's bar
+	renderer = ax.figure.canvas.get_renderer()
+	bar_right = pearson_cax.get_window_extent(renderer).x1
+	text_right = pearson_cax.get_tightbbox(renderer).x1
+	overhang = (text_right - bar_right) / ax.figure.dpi  # pixels to inches
+	spearman_cax = divider.append_axes('right', size=COLORBAR_WIDTH, pad=overhang + COLORBAR_GAP)
+
 	sns.heatmap(
 		spearman,
 		mask=np.tril(ones),  # hide the diagonal and below, which Pearson already fills
 		cmap=_mirrored(SPEARMAN_CMAP),
+		cbar_ax=spearman_cax,
 		cbar_kws={
 			'label': 'Spearman rho, upper right (darker = stronger)',
 			'ticks': ticks,

@@ -3,6 +3,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from utils.plotting.box_plot import draw_boxes
 from Q2.utils.statistics.category_levels_df import level_means_r_squared
 
 
@@ -31,19 +32,14 @@ def level_box_plot(
 	if ax is None:
 		_, ax = plt.subplots()
 
-	ax.boxplot(
-		list(groups.values()),
-		showmeans=True,  # mark each level's mean, which is what the level means R² is built from
-		meanprops={'marker': 'D', 'markerfacecolor': 'red', 'markeredgecolor': 'red', 'markersize': 5},
-	)
-	ax.set_xticks(  # boxplot places the boxes at x = 1, 2, 3, ...
-		range(1, len(groups) + 1),
-		labels=[f'{level}\nn={len(values)}' for level, values in groups.items()],  # kept short so 12 levels fit side by side
-	)
-
 	overall_mean = data[target].mean()
 	ax.axhline(overall_mean, color='gray', ls='--', lw=1.5, label=f'Overall mean = {overall_mean:,.0f}')
-	ax.plot([], [], 'D', color='red', markersize=5, label='Level mean')  # legend entry for the mean markers
+
+	draw_boxes(
+		groups={f'{level}\nn={len(values)}': values for level, values in groups.items()},  # labels kept short so 12 levels fit side by side
+		ax=ax,
+		mean_label='Level mean',  # each level's mean is what the level means R² is built from
+	)
 
 	ax.set_xlabel(feature)
 	ax.set_ylabel(target)

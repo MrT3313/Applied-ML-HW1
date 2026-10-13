@@ -5,7 +5,7 @@ from utils.scoring.scorers import root_mean_squared_error
 
 
 def prediction_scores(y_true: ArrayLike, y_pred: ArrayLike) -> dict[str, float]:
-	"""Score one set of predictions with the same metrics as SCORERS.
+	"""Score one set of predictions with rmse, mae and r2.
 
 	Args:
 		y_true: Actual target values.

@@ -41,7 +41,7 @@ def collinearity_df(*, df: pd.DataFrame, feature_pearson_threshold: float = 0.7,
 
 	redundant = out['Pearson r between features'].abs() > feature_pearson_threshold
 	out[f'|r| between features > {feature_pearson_threshold}'] = redundant
-	out['outcome'] = np.where(redundant, 'redundant: keep one, or use Ridge', 'not redundant')
+	out['outcome'] = np.where(redundant, 'redundant: keep one, or use regularization', 'not redundant')
 
 	if filter:
 		out = out[redundant]
