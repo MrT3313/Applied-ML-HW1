@@ -26,13 +26,5 @@ COLUMNS = {
 SHORT_NAMES = {col: c['short_name'] for col, c in COLUMNS.items()}
 TARGET = SHORT_NAMES["cnt"]
 
-TEST_SIZE = 0.2
-
 CV_SPLITS = 4
 CV_TEST_SIZE = 46
-
-HIST_BINS = 30
-
-SEEDS = [42, 0, 1, 2, 3]
-ALPHAS = [0.001, 0.01, 0.1]
-LEARNING_RATES = [0.0001, 0.001, 0.01, 0.1]
