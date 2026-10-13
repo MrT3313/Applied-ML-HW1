@@ -14,12 +14,13 @@ from utils.plotting.histogram import histogram
 from utils.plotting.scatterplot import scatterplot
 from utils.plotting.qq import qq
 from utils.plotting.box_plot import box_plot, box_plot_vs_target
+from utils.plotting.count_plot import count_plot
 # from utils.plotting.scatter_matrix import scatter_matrix
 # from utils.plotting.correlation_matrix import correlation_matrix
 # from utils.plotting.loss_curve import loss_curve
 # from utils.plotting.predicted_vs_actual import predicted_vs_actual
 
-def single_feature_plots(
+def continuous_single_feature_plots(
 	*,
 	df: pd.DataFrame,
 	feature: str,
@@ -81,7 +82,41 @@ def single_feature_plots(
 
 	return fig, axes, results
 
-def distribution_plots(
+def categorical_single_feature_plots(
+	*,
+	df: pd.DataFrame,
+	feature: str,
+	target: str,
+	by: Optional[str] = None,
+):
+	"""Plot one categorical feature's row count per level above a box plot of the target for each level.
+
+	Args:
+		df: DataFrame holding the columns.
+		feature: Categorical column to plot.
+		target: Column whose distribution is plotted for each level.
+		by: Second categorical column that splits every level in both charts, one color per level of it.
+			When omitted, the levels are not split.
+
+	Returns:
+		The Figure and its Axes keyed by chart name ([count_plot], [box_plot_vs_target]).
+	"""
+	fig, axes = plt.subplot_mosaic(
+		[
+			['count_plot'],
+			['box_plot_vs_target'],  # stacked at full width so the boxes of a 12 level feature split by a second column fit
+		],
+		figsize=(14, 10),
+	)
+
+	count_plot(df=df, feature=feature, by=by, ax=axes['count_plot'])
+	box_plot_vs_target(df=df, feature=feature, target=target, levels=True, by=by, ax=axes['box_plot_vs_target'])
+
+	fig.tight_layout()
+
+	return fig, axes
+
+def continuous_distribution_plots(
 	*,
 	series: pd.Series,
 	bins: int = 30,

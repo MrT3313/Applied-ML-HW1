@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from consts import DEFAULT_BLUE, HINGE_COLOR, MEAN_COLOR, MEDIAN_COLOR, STEP_COLOR
+from consts import DEFAULT_BLUE, GROUP_COLORS, HINGE_COLOR, MEAN_COLOR, MEDIAN_COLOR, STEP_COLOR
 
 # boxes split at a step or hinge threshold take the color of that fit's line on the scatter plot
 THRESHOLD_COLORS = {'step': STEP_COLOR, 'hinge': HINGE_COLOR}
@@ -96,28 +96,53 @@ def box_plot_vs_target(
 	feature: str,
 	target: str,
 	thresholds: Optional[dict[str, float]] = None,
+	levels: bool = False,
+	by: Optional[str] = None,
 	ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
-	"""Plot a vertical box plot of the target for all rows and for the two groups each feature threshold splits them into.
+	"""Plot a vertical box plot of the target for all rows and for the groups the feature splits them into.
+
+	A continuous feature splits the rows at thresholds, a categorical feature splits them by level.
 
 	Args:
-		df: DataFrame holding both columns. Rows missing either one are dropped.
+		df: DataFrame holding the columns. Rows missing any of them are dropped.
 		feature: Column used to split the rows into groups.
 		target: Column whose distribution is plotted for each group.
 		thresholds: Feature value of each split keyed by its name, such as 'step' or 'hinge'. Every split adds two boxes:
-			rows with feature < threshold, then the rest. When omitted, only the box of all rows is drawn.
+			rows with feature < threshold, then the rest. When omitted, no threshold boxes are drawn.
+		levels: Add one box per level of a categorical feature, and put the level means R² in the title.
+		by: Second categorical column that splits each level into one box per level of it that has rows, one color
+			per level of it. Only used when `levels` is True.
 		ax: Axes to draw on. A new figure and axes are created when omitted.
 
 	Returns:
 		The Axes the chart was drawn on.
 	"""
-	data = df[[feature, target]].dropna()  # boxplot returns NaN stats for a group containing NaN
+	data = df[[feature, target] + ([by] if by else [])].dropna()  # boxplot returns NaN stats for a group containing NaN
 	groups = {'all': data[target]}
 	colors = [DEFAULT_BLUE]
 	for name, threshold in (thresholds or {}).items():
 		groups[f'{name}\n< {threshold:g}'] = data.loc[data[feature] < threshold, target]
 		groups[f'{name}\n>= {threshold:g}'] = data.loc[data[feature] >= threshold, target]
 		colors += [THRESHOLD_COLORS.get(name, DEFAULT_BLUE)] * 2  # one color for both sides of the split
+
+	title = f'{target} vs {feature} Box Plot'
+	if levels and by:
+		by_colors = dict(zip(sorted(data[by].unique()), GROUP_COLORS))  # the same color as this by level's bars in count_plot
+		for (level, by_level), values in data.groupby([feature, by])[target]:  # only the pairs that have rows
+			groups[f'{level}\n{by} {by_level}'] = values
+			colors.append(by_colors[by_level])
+		title = f'{target} vs {feature} and {by} Box Plot'
+	elif levels:
+		for level, values in data.groupby(feature)[target]:
+			groups[str(level)] = values
+			colors.append(DEFAULT_BLUE)
+
+	if levels:
+		# level means R²: the share of the target's variation explained by predicting every row with the mean of its box
+		sse = sum(((values - values.mean()) ** 2).sum() for values in list(groups.values())[1:])  # every box but 'all'
+		sst = ((data[target] - data[target].mean()) ** 2).sum()
+		title += f' (level means R² = {1 - sse / sst:.2f})'
 
 	if ax is None:
 		_, ax = plt.subplots()
@@ -131,8 +156,8 @@ def box_plot_vs_target(
 	parts['means'][0].set_label('Mean')
 	parts['medians'][0].set_label('Median')
 
-	ax.set_title(f'{target} vs {feature} Box Plot')
-	ax.set_xlabel(feature)  # the thresholds in the tick labels are values of the feature
+	ax.set_title(title)
+	ax.set_xlabel(feature)  # the thresholds or levels in the tick labels are values of the feature
 	ax.set_ylabel(target)
 
 	# Legend centered below the axes, outside the plot area

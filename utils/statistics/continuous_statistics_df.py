@@ -5,7 +5,7 @@ import pandas as pd
 from utils import RULE_OF_THUMB
 
 
-def statistics_df(*, series: pd.Series, target: Optional[pd.Series] = None, transpose: bool = False) -> pd.DataFrame:
+def continuous_statistics_df(*, series: pd.Series, target: Optional[pd.Series] = None, transpose: bool = False) -> pd.DataFrame:
 	"""Compute statistics for a single column.
 
 	Args:

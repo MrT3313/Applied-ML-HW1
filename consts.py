@@ -13,3 +13,4 @@ LOWESS_COLOR = '#159a6b'
 STEP_COLOR = '#862d2d'
 HINGE_COLOR = '#a655f6'
 SCATTER_COLOR = '#9e9e9e'  # neutral gray so the points recede behind the colored fit lines
+GROUP_COLORS = [DEFAULT_BLUE, '#5aa9f5']  # one per level of a `by` column, in level order (Year has two levels)
