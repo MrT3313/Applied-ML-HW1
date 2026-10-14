@@ -15,8 +15,8 @@ from utils.plotting.scatterplot import scatterplot
 from utils.plotting.qq import qq
 from utils.plotting.box_plot import box_plot, box_plot_vs_target
 from utils.plotting.count_plot import count_plot
-# from utils.plotting.scatter_matrix import scatter_matrix
-# from utils.plotting.correlation_matrix import correlation_matrix
+from utils.plotting.scatter_matrix import scatter_matrix
+from utils.plotting.correlation_matrix import correlation_matrix
 # from utils.plotting.loss_curve import loss_curve
 # from utils.plotting.predicted_vs_actual import predicted_vs_actual
 
