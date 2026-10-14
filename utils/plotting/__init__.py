@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from consts import R2_GAIN_MARGIN
-from utils.statistics.shape_fits import FAMILIES, reference_r2, shape_fits
+from utils.statistics.shape_fits import category_fits, category_reference_r2, reference_r2, shape_fits
 from utils.plotting.histogram import histogram
 from utils.plotting.scatterplot import scatterplot
 from utils.plotting.shape_r2_bars import shape_r2_bars
@@ -57,7 +57,7 @@ def continuous_single_feature_plots(
 		references = reference_r2(df=df, feature=feature, target=target)
 
 		# the best shape of each family, kept only when it beats the straight line by at least the margin
-		for family in FAMILIES:
+		for family in dict.fromkeys(shape.family for shape in fits):  # the families in the fits, in menu order
 			best = max((shape for shape in fits if shape.family == family), key=lambda shape: shape.r_squared)
 			if best.r_squared - references['linear'] >= R2_GAIN_MARGIN:
 				drawn.append(best)
@@ -85,29 +85,59 @@ def categorical_single_feature_plots(
 	feature: str,
 	target: str,
 	by: Optional[str] = None,
+	period: Optional[float] = None,
+	shapes: bool = True,
 ):
-	"""Plot one categorical feature's row count per level above a box plot of the target for each level.
+	"""Plot one categorical feature's row count per level above a box plot of the target for each level, and the
+	adjusted R² of every candidate encoding of it.
 
 	Args:
 		df: DataFrame holding the columns.
-		feature: Categorical column to plot.
-		target: Column whose distribution is plotted for each level.
-		by: Second categorical column that splits every level in both charts, one color per level of it.
-			When omitted, the levels are not split.
+		feature: Categorical column to plot, stored as numbers.
+		target: Column whose distribution is plotted for each level and the candidate encodings are fitted to.
+		by: Second categorical column that splits every level in both charts, one color per level of it, and is added
+			to every candidate encoding as a control. When omitted, the levels are not split.
+		period: Number of levels in one full cycle, ex 12 for Month, which adds the cyclic candidates. When omitted,
+			they are left out.
+		shapes: Fit every candidate encoding (from category_fits), plot each one's adjusted R² gain over the straight
+			line as a bar, and mark on the box plot the best encoding of each family when it beats the straight line's
+			adjusted R² by at least R2_GAIN_MARGIN. Skipped for a feature with 2 levels: every encoding of it is the
+			same 0/1 column, so there is nothing to compare. When False, only the first two charts are drawn.
 
 	Returns:
-		The Figure and its Axes keyed by chart name ([count_plot], [box_plot_vs_target]).
+		The Figure and its Axes keyed by chart name ([count_plot], [box_plot_vs_target], [shape_r2]).
 	"""
-	fig, axes = plt.subplot_mosaic(
-		[
-			['count_plot'],
-			['box_plot_vs_target'],  # stacked at full width so the boxes of a 12 level feature split by a second column fit
-		],
-		figsize=(14, 10),
-	)
+	mosaic = [
+		['count_plot'],
+		['box_plot_vs_target'],  # stacked at full width so the boxes of a 12 level feature split by a second column fit
+	]
+	drawn = []
+
+	shapes = shapes and df[feature].nunique() > 2
+	if shapes:
+		mosaic.append(['shape_r2'])
+		fits = category_fits(df=df, feature=feature, target=target, period=period, control=by)
+		references = category_reference_r2(df=df, feature=feature, target=target, control=by)
+
+		# the best encoding of each family, kept only when it beats the straight line by at least the margin
+		for family in dict.fromkeys(shape.family for shape in fits):  # the families in the fits, in menu order
+			best = max((shape for shape in fits if shape.family == family), key=lambda shape: shape.adjusted_r_squared)
+			if best.adjusted_r_squared - references['linear'] >= R2_GAIN_MARGIN:
+				drawn.append(best)
+
+	fig, axes = plt.subplot_mosaic(mosaic, figsize=(14, 5 * len(mosaic)))
 
 	count_plot(df=df, feature=feature, by=by, ax=axes['count_plot'])
-	box_plot_vs_target(df=df, feature=feature, target=target, levels=True, by=by, ax=axes['box_plot_vs_target'])
+	box_plot_vs_target(df=df, feature=feature, target=target, levels=True, by=by, fits=drawn, ax=axes['box_plot_vs_target'])
+	if shapes:
+		shape_r2_bars(
+			feature=feature,
+			fits=fits,
+			references=references,
+			adjusted=True,
+			title=f'{feature} Candidate Encodings: Adjusted R² Gain over the Straight Line' + (f' (with {by})' if by else ''),
+			ax=axes['shape_r2'],
+		)
 
 	fig.tight_layout()
 

@@ -25,6 +25,5 @@ COLUMNS = {
 
 SHORT_NAMES = {col: c['short_name'] for col, c in COLUMNS.items()}
 TARGET = SHORT_NAMES["cnt"]
-
-CV_SPLITS = 4
-CV_TEST_SIZE = 46
+# The continuous attributes, used by the categorical interaction tables.
+CONTINUOUS = ['Temp', 'FeelsLike', 'Humidity', 'Wind']

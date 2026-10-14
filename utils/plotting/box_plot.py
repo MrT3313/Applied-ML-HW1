@@ -1,9 +1,11 @@
 from typing import Optional, Sequence
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
-from consts import DEFAULT_BLUE, GROUP_COLORS, HINGE_COLOR, MEAN_COLOR, MEDIAN_COLOR, STEP_COLOR
+from consts import DEFAULT_BLUE, FAMILY_COLORS, GROUP_COLORS, HINGE_COLOR, MEAN_COLOR, MEDIAN_COLOR, STEP_COLOR
+from utils.statistics.shape_fits import ShapeFit
 
 # boxes split at a step or hinge threshold take the color of that fit's line on the scatter plot
 THRESHOLD_COLORS = {'step': STEP_COLOR, 'hinge': HINGE_COLOR}
@@ -98,6 +100,7 @@ def box_plot_vs_target(
 	thresholds: Optional[dict[str, float]] = None,
 	levels: bool = False,
 	by: Optional[str] = None,
+	fits: Sequence[ShapeFit] = (),
 	ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
 	"""Plot a vertical box plot of the target for all rows and for the groups the feature splits them into.
@@ -113,6 +116,10 @@ def box_plot_vs_target(
 		levels: Add one box per level of a categorical feature, and put the level means R² in the title.
 		by: Second categorical column that splits each level into one box per level of it that has rows, one color
 			per level of it. Only used when `levels` is True.
+		fits: Candidate encodings (from category_fits) to draw, each as one wide mark in its family's color on every
+			level box (not the 'all' box) at the target it predicts for that box. With `by`, each fit predicts with
+			the box's `by` level as the control, so it must have been fitted with control=by. Only used when `levels`
+			is True.
 		ax: Axes to draw on. A new figure and axes are created when omitted.
 
 	Returns:
@@ -127,16 +134,19 @@ def box_plot_vs_target(
 		colors += [THRESHOLD_COLORS.get(name, DEFAULT_BLUE)] * 2  # one color for both sides of the split
 
 	title = f'{target} vs {feature} Box Plot'
+	level_boxes = []  # the (level, by level) of each level box, in the order drawn, for the fits' marks
 	if levels and by:
 		by_colors = dict(zip(sorted(data[by].unique()), GROUP_COLORS))  # the same color as this by level's bars in count_plot
 		for (level, by_level), values in data.groupby([feature, by])[target]:  # only the pairs that have rows
 			groups[f'{level}\n{by} {by_level}'] = values
 			colors.append(by_colors[by_level])
+			level_boxes.append((level, by_level))
 		title = f'{target} vs {feature} and {by} Box Plot'
 	elif levels:
 		for level, values in data.groupby(feature)[target]:
 			groups[str(level)] = values
 			colors.append(DEFAULT_BLUE)
+			level_boxes.append((level, None))
 
 	if levels:
 		# level means R²: the share of the target's variation explained by predicting every row with the mean of its box
@@ -155,6 +165,24 @@ def box_plot_vs_target(
 	)
 	parts['means'][0].set_label('Mean')
 	parts['medians'][0].set_label('Median')
+	handles = [parts['means'][0], parts['medians'][0]]  # mean first, the same order as the histogram legend
+
+	# Each fit's prediction for every level box, as a flat mark across the box. It is a little wider than the box (0.5),
+	# so its ends also show against the white background, and it shrinks with the boxes when there are many of them.
+	positions = np.arange(len(groups) - len(level_boxes) + 1, len(groups) + 1)  # boxplot places the boxes at 1, 2, 3, ...
+	for shape in fits if levels else ():
+		predicted = shape.predict(
+			x=[level for level, _ in level_boxes],
+			control=[by_level for _, by_level in level_boxes] if by else None,
+		)
+		handles.append(ax.hlines(
+			predicted,
+			positions - 0.35,
+			positions + 0.35,
+			lw=3,
+			color=FAMILY_COLORS[shape.family],
+			label=f'{shape.label}: adj. R² = {shape.adjusted_r_squared:.2f}',
+		))
 
 	ax.set_title(title)
 	ax.set_xlabel(feature)  # the thresholds or levels in the tick labels are values of the feature
@@ -162,10 +190,10 @@ def box_plot_vs_target(
 
 	# Legend centered below the axes, outside the plot area
 	ax.legend(
-		handles=[parts['means'][0], parts['medians'][0]],  # mean first, the same order as the histogram legend
+		handles=handles,
 		loc='upper center',  # anchor point on the legend box
 		bbox_to_anchor=(0.5, -0.25),  # place that anchor centered, just below the x-axis label
-		ncol=2,
+		ncol=min(len(handles), 3),  # the fits' entries are long, so at most 3 per row keeps them inside the figure
 		fontsize='small',
 		framealpha=0.9,
 	)

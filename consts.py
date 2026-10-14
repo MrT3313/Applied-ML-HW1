@@ -1,4 +1,3 @@
-HIST_BINS = 30
 TEST_SIZE = 0.2
 SEEDS = [42, 0, 1, 2, 3]
 ALPHAS = [0.001, 0.01, 0.1]
@@ -15,9 +14,12 @@ STEP_COLOR = '#862d2d'
 HINGE_COLOR = '#a655f6'
 SCATTER_COLOR = '#9e9e9e'  # neutral gray so the points recede behind the colored fit lines
 GROUP_COLORS = [DEFAULT_BLUE, '#5aa9f5']  # one per level of a `by` column, in level order (Year has two levels)
-# one per family of candidate shapes (utils/statistics/shape_fits.py), used by both the scatter plot curves and the R² bars
+# one per family of candidate shapes (utils/statistics/shape_fits.py), used by the scatter plot curves, the R² bars and
+# the marks on the categorical box plots
 FAMILY_COLORS = {
 	're-expression': '#c27c00',
 	'piecewise linear': HINGE_COLOR,
 	'bins': '#a8473f',
+	'groups': '#d6336c',
+	'cyclic': '#0aa6b8',
 }
