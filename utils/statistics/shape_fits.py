@@ -23,9 +23,8 @@ How a candidate is graded:
 
 Searched settings:
 	Some candidates have a setting that does not change their number of columns, ex the threshold of a hinge or the
-	shift and direction of a log. Every value in that setting's grid is tried and the one with the highest R² is kept, the same
-	way find_threshold.py searches a threshold. The search sees the same rows it is scored on, so the kept R² is a
-	little optimistic.
+	shift and direction of a log. Every value in that setting's grid is tried and the one with the highest R² is kept.
+	The search sees the same rows it is scored on, so the kept R² is a little optimistic.
 	The number of bins is fixed instead: more bins means more columns, which almost always raises R² on these rows,
 	so a search would always pick the largest number tried.
 
@@ -95,7 +94,7 @@ Family = Literal['re-expression', 'piecewise linear', 'bins', 'groups', 'cyclic'
 FAMILIES: tuple[Family, ...] = get_args(Family)
 
 # Searched settings (each value is tried, the best R² is kept)
-MIN_GROUP_FRAC = 0.05  # hinge, cap, floor and step thresholds leave at least 5% of rows on each side, as in find_threshold.py
+MIN_GROUP_FRAC = 0.05  # hinge, cap, floor and step thresholds leave at least 5% of rows on each side
 SHIFT_STEPS = (0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10)  # how far above 0 the bending end lands, as a multiple of the range
 WINSORIZE_PERCENTS = range(1, 46)  # clip the lowest p% and the highest p% of values, leaving at least the middle 10% as it is
 # Yeo-Johnson powers: 1 leaves the feature as it is, below 1 squeezes its high end (like log), above 1 squeezes its low
@@ -181,7 +180,7 @@ def _yeo_johnson(x: np.ndarray, *, lmbda: float) -> np.ndarray:
 	return stats.yeojohnson(x.ravel(), lmbda=lmbda).reshape(-1, 1)
 
 def _hinge(x: np.ndarray, *, t: float) -> np.ndarray:
-	"""x and how far x is past t (0 below it), so the slope can change at t (see find_threshold.py)."""
+	"""x and how far x is past t (0 below it), so the slope can change at t."""
 	return np.hstack([x, np.maximum(0, x - t)])
 
 def _cap(x: np.ndarray, *, t: float) -> np.ndarray:
@@ -228,7 +227,7 @@ def _transform(func, **settings) -> FunctionTransformer:
 
 def _thresholds(x: np.ndarray) -> np.ndarray:
 	"""Thresholds tried by the hinge, cap, floor and step: every distinct value that leaves at least MIN_GROUP_FRAC of
-	the rows on each side, the same candidates find_threshold.py tries (see its comments for why)."""
+	the rows on each side, so a threshold near the edge cannot win by isolating a few outliers."""
 	min_rows = math.ceil(MIN_GROUP_FRAC * len(x))
 	values = np.unique(x)
 	n_low = np.searchsorted(np.sort(x), values, side='left')  # rows below each value

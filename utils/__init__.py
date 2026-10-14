@@ -4,7 +4,6 @@ from utils import rule_of_thumb as RULE_OF_THUMB
 from utils import split as SPLIT
 from utils import statistics as STATISTICS, plotting as PLOTTING
 # from utils import scoring as SCORING
-from utils import features as FEATURES
 # from utils import pipelines as PIPELINES
 
 __all__ = [
@@ -15,6 +14,5 @@ __all__ = [
 	'STATISTICS',
 	'PLOTTING',
 	# 'SCORING',
-	'FEATURES',
 	# 'PIPELINES',
 ]

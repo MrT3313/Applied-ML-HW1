@@ -1,4 +1,5 @@
 from itertools import combinations
+from typing import Optional
 
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -9,7 +10,7 @@ def _r2(X: pd.DataFrame, y: pd.Series) -> float:
 	return LinearRegression().fit(X, y).score(X, y)
 
 
-def r2_gain_df(*, df: pd.DataFrame, target: str, size: int = 2) -> pd.DataFrame:
+def r2_gain_df(*, df: pd.DataFrame, target: str, size: int = 2, min_gain: Optional[float] = None) -> pd.DataFrame:
 	"""Compute how much R² with the target each combination of `size` attributes gains over its best smaller subset.
 
 	Each combination is scored by the R² of a linear regression of the target on its attributes. The baseline is
@@ -24,6 +25,8 @@ def r2_gain_df(*, df: pd.DataFrame, target: str, size: int = 2) -> pd.DataFrame:
 			attributes and the target are present.
 		target: Column the attributes are meant to predict.
 		size: Number of attributes in each combination. Must be at least 2.
+		min_gain: Smallest r2 gain for a combination to be kept, compared after rounding. A line saying how many
+			combinations were left out is printed. None keeps every combination.
 
 	Returns:
 		A DataFrame with one row per combination, indexed by the attribute names joined with ' + ', sorted by
@@ -47,4 +50,11 @@ def r2_gain_df(*, df: pd.DataFrame, target: str, size: int = 2) -> pd.DataFrame:
 			'r2 gain': together - one_left_out,
 		}
 
-	return pd.DataFrame.from_dict(rows, orient='index').sort_values('r2 gain', ascending=False).round(3)
+	out = pd.DataFrame.from_dict(rows, orient='index').sort_values('r2 gain', ascending=False).round(3)
+	if min_gain is None:
+		return out
+
+	kept = out[out['r2 gain'] >= min_gain]
+	name = 'pairs' if size == 2 else 'triples' if size == 3 else f'combinations of {size}'
+	print(f'{len(kept)} of {len(out)} {name} shown: the other {len(out) - len(kept)} gain less than {min_gain:g}.')
+	return kept
