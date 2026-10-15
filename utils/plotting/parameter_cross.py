@@ -15,6 +15,7 @@ def parameter_cross(
 	log_x: bool = False,
 	reference: Optional[tuple[str, pd.DataFrame]] = None,
 	ymax: Optional[float] = None,
+	unit: Optional[str] = None,
 ) -> plt.Axes:
 	"""Plot the mean validation RMSE of every pair of values tried for two parameters: one line per value of the first
 	parameter, across the values of the second.
@@ -31,6 +32,7 @@ def parameter_cross(
 		reference: (name, result) of a model to draw as a dotted line at its mean validation RMSE, ex the baseline.
 		ymax: Highest RMSE shown. A run that diverges can reach RMSEs that flatten every other line against the axis:
 			anything above ymax is drawn at ymax as a triangle. None shows everything.
+		unit: Unit of the RMSE, added to the y axis label when given.
 
 	Returns:
 		The Axes the chart was drawn on.
@@ -51,7 +53,7 @@ def parameter_cross(
 	best = min(mean, key=mean.get)
 	ax.plot(best[1], shown[best], '*', color='black', markersize=14, label=f'lowest mean: {lines}={best[0]}, {x}={best[1]:g}')
 	if ymax is not None and any(value > ymax for value in mean.values()):
-		ax.plot([], [], '^', color='black', label=f'above {ymax:g} (off the chart)')
+		ax.plot([], [], '^', color='black', label=f'above {ymax:.4g} (off the chart)')
 	if reference is not None:
 		name, run = reference
 		ax.axhline(run['validation rmse'].mean(), color=BASELINE_COLOR, linestyle=':', linewidth=1.5, label=f'{name}, validation mean')
@@ -61,7 +63,7 @@ def parameter_cross(
 	else:
 		ax.set_xticks(sorted({pair[1] for pair in runs}))
 	ax.set_xlabel(x + (' (log scale)' if log_x else ''))
-	ax.set_ylabel('Mean validation RMSE')
+	ax.set_ylabel('Mean validation RMSE' + (f' ({unit})' if unit else ''))
 	ax.set_title(f'{lines} × {x}: mean validation RMSE')
 	ax.grid(alpha=0.3)
 	ax.legend(fontsize='small')

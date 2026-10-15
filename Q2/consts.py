@@ -25,7 +25,9 @@ COLUMNS = {
 
 SHORT_NAMES = {col: c['short_name'] for col, c in COLUMNS.items()}
 TARGET = SHORT_NAMES["cnt"]
-# The continuous attributes, used by the categorical interaction tables.
+TARGET_UNIT = 'rentals per day'  # the unit of every RMSE, for the D and E chart labels
+# The continuous attributes: used by Q2B's interaction tables, Q2C's scatter matrix and R² gain tables, the shape fits
+# (FITS) of Q2D and Q2E, and the columns Q2E expands (EXPAND).
 CONTINUOUS = ['Temp', 'FeelsLike', 'Humidity', 'Wind']
 
-CV_TEST_SIZE = 46  # D: validation days in each of the 4 time-ordered folds, so every fold trains on some 2012 days
+CV_TEST_SIZE = 46  # D and E: validation days in each of the 4 time-ordered folds (reasoning in Q2D's Method)

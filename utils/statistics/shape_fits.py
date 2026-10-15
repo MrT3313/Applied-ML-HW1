@@ -79,7 +79,7 @@ Categorical features (category_fits):
 import itertools
 import math
 from dataclasses import dataclass
-from typing import Literal, Optional, get_args
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -91,7 +91,6 @@ from sklearn.preprocessing import FunctionTransformer, KBinsDiscretizer
 from statsmodels.nonparametric.smoothers_lowess import lowess as fit_lowess
 
 Family = Literal['re-expression', 'piecewise linear', 'bins', 'groups', 'cyclic']
-FAMILIES: tuple[Family, ...] = get_args(Family)
 
 # Searched settings (each value is tried, the best R² is kept)
 MIN_GROUP_FRAC = 0.05  # hinge, cap, floor and step thresholds leave at least 5% of rows on each side
@@ -99,7 +98,7 @@ SHIFT_STEPS = (0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10)  # how far above 0 
 WINSORIZE_PERCENTS = range(1, 46)  # clip the lowest p% and the highest p% of values, leaving at least the middle 10% as it is
 # Yeo-Johnson powers: 1 leaves the feature as it is, below 1 squeezes its high end (like log), above 1 squeezes its low
 # end. The range is wide because features between 0 and 1 need large powers before the curve bends much (Humidity's
-# best power is about 24).
+# best power is about 22).
 YEO_JOHNSON_LAMBDAS = np.arange(-10, 30.01, 0.5)
 
 # Fixed setting (it adds columns, so it is not searched)
@@ -227,15 +226,15 @@ def _sin_cos(x: np.ndarray, *, period: float, waves: int) -> np.ndarray:
 	return np.hstack([f(angle) for angle in angles for f in (np.sin, np.cos)])
 
 
-def _line(*steps) -> Pipeline:
+def _line(*, steps: list) -> Pipeline:
 	"""The given steps followed by a linear regression."""
 	return make_pipeline(*steps, LinearRegression())
 
-def _transform(func, **settings) -> FunctionTransformer:
+def _transform(*, func, **settings) -> FunctionTransformer:
 	"""Wrap a transform above, with its settings, as a pipeline step."""
 	return FunctionTransformer(func, kw_args=settings)
 
-def _thresholds(x: np.ndarray) -> np.ndarray:
+def _thresholds(*, x: np.ndarray) -> np.ndarray:
 	"""Thresholds tried by the hinge, cap, floor and step: every distinct value that leaves at least MIN_GROUP_FRAC of
 	the rows on each side, so a threshold near the edge cannot win by isolating a few outliers."""
 	min_rows = math.ceil(MIN_GROUP_FRAC * len(x))
@@ -243,21 +242,21 @@ def _thresholds(x: np.ndarray) -> np.ndarray:
 	n_low = np.searchsorted(np.sort(x), values, side='left')  # rows below each value
 	return values[(n_low >= min_rows) & (len(x) - n_low >= min_rows)]
 
-def _power_label(shift: float, *, reflect: bool) -> str:
+def _power_label(*, shift: float, reflect: bool) -> str:
 	"""What the power is applied to, ex 'x + 0.5', or 'reflected: 11.7 - x' when reflected."""
 	if reflect:
 		return f'reflected: {shift:.3g} - x' if shift else 'reflected: -x'
 	return f'x {"+" if shift > 0 else "-"} {abs(shift):.3g}' if shift else 'x'
 
-def _candidates(x: np.ndarray) -> dict[str, tuple[Family, list[tuple[str, Pipeline]]]]:
+def _candidates(*, x: np.ndarray) -> dict[str, tuple[Family, list[tuple[str, Pipeline]]]]:
 	"""Every candidate shape, keyed by name, before fitting.
 
 	Each value is the candidate's family and its options: one (setting, unfitted pipeline) pair per value of its setting.
 	"""
 	span = x.max() - x.min()
-	thresholds = _thresholds(x)
+	thresholds = _thresholds(x=x)
 
-	def power(p: float, *, zero_ok: bool) -> list[tuple[str, Pipeline]]:
+	def power(*, p: float, zero_ok: bool) -> list[tuple[str, Pipeline]]:
 		# Both directions are tried. As it is (x + shift), the curve bends hardest near the smallest values. Reflected
 		# (shift - x, the values counted down from the top), it bends hardest near the largest values, the mirror image.
 		# For each direction, the shifts put the value at the bending end from 0.1% of the range up to 10 times the
@@ -271,50 +270,50 @@ def _candidates(x: np.ndarray) -> dict[str, tuple[Family, list[tuple[str, Pipeli
 			if not reflect and x.min() > 0:
 				shifts.insert(0, 0.0)
 			options += [
-				(_power_label(shift, reflect=reflect), _line(_transform(_power, power=p, shift=shift, reflect=reflect)))
+				(_power_label(shift=shift, reflect=reflect), _line(steps=[_transform(func=_power, power=p, shift=shift, reflect=reflect)]))
 				for shift in shifts
 			]
 		return options
 
 	return {
 		# re-expression
-		'reciprocal': ('re-expression', power(-1, zero_ok=False)),
-		'log': ('re-expression', power(0, zero_ok=False)),
-		'sqrt': ('re-expression', power(0.5, zero_ok=True)),
+		'reciprocal': ('re-expression', power(p=-1, zero_ok=False)),
+		'log': ('re-expression', power(p=0, zero_ok=False)),
+		'sqrt': ('re-expression', power(p=0.5, zero_ok=True)),
 		'Yeo-Johnson': ('re-expression', [
-			(f'λ = {lmbda:g}', _line(_transform(_yeo_johnson, lmbda=lmbda))) for lmbda in YEO_JOHNSON_LAMBDAS
+			(f'λ = {lmbda:g}', _line(steps=[_transform(func=_yeo_johnson, lmbda=lmbda)])) for lmbda in YEO_JOHNSON_LAMBDAS
 		]),
 
 		# piecewise linear
-		'hinge': ('piecewise linear', [(f't = {t:.3g}', _line(_transform(_hinge, t=t))) for t in thresholds]),
-		'cap': ('piecewise linear', [(f't = {t:.3g}', _line(_transform(_cap, t=t))) for t in thresholds]),
-		'floor': ('piecewise linear', [(f't = {t:.3g}', _line(_transform(_floor, t=t))) for t in thresholds]),
+		'hinge': ('piecewise linear', [(f't = {t:.3g}', _line(steps=[_transform(func=_hinge, t=t)])) for t in thresholds]),
+		'cap': ('piecewise linear', [(f't = {t:.3g}', _line(steps=[_transform(func=_cap, t=t)])) for t in thresholds]),
+		'floor': ('piecewise linear', [(f't = {t:.3g}', _line(steps=[_transform(func=_floor, t=t)])) for t in thresholds]),
 		'winsorize': ('piecewise linear', [
-			(f'{p}% each side', _line(_transform(_winsorize, low=np.percentile(x, p), high=np.percentile(x, 100 - p))))
+			(f'{p}% each side', _line(steps=[_transform(func=_winsorize, low=np.percentile(x, p), high=np.percentile(x, 100 - p))]))
 			for p in WINSORIZE_PERCENTS
 		]),
 
 		# bins
-		'step': ('bins', [(f't = {t:.3g}', _line(_transform(_step, t=t))) for t in thresholds]),
-		'quantile bins': ('bins', [(f'{N_BINS} bins', _line(
+		'step': ('bins', [(f't = {t:.3g}', _line(steps=[_transform(func=_step, t=t)])) for t in thresholds]),
+		'quantile bins': ('bins', [(f'{N_BINS} bins', _line(steps=[
 			KBinsDiscretizer(N_BINS, encode='onehot-dense', strategy='quantile', subsample=None),
-			_transform(_drop_first),
-		))]),
+			_transform(func=_drop_first),
+		]))]),
 	}
 
-def _category_line(step) -> Pipeline:
+def _category_line(*, step) -> Pipeline:
 	"""The step applied to the feature (the first column) while the control columns after it pass through unchanged,
 	followed by a linear regression. Without a control, the feature is the only column."""
 	return make_pipeline(ColumnTransformer([('shape', step, [0])], remainder='passthrough'), LinearRegression())
 
-def _group_label(groups: list[list[float]]) -> str:
+def _group_label(*, groups: list[list[float]]) -> str:
 	"""The groups of levels, ex '{1, 4} | {2, 3}'."""
 	return ' | '.join('{' + ', '.join(f'{level:g}' for level in sorted(group)) + '}' for group in groups)
 
 def _category_candidates(
+	*,
 	x: np.ndarray,
 	y: np.ndarray,
-	*,
 	period: Optional[float],
 ) -> dict[str, tuple[Family, list[tuple[str, Pipeline]]]]:
 	"""Every candidate encoding of a categorical feature, keyed by name, before fitting (the same shape as _candidates)."""
@@ -323,46 +322,46 @@ def _category_candidates(
 	by_mean = list(pd.Series(y).groupby(x).mean().sort_values().index)
 	thresholds = levels[1:-1]  # every level but the lowest and the highest, so each side keeps at least one level
 
-	def groups(n: int) -> list[tuple[str, Pipeline]]:
+	def groups(*, n: int) -> list[tuple[str, Pipeline]]:
 		# every way to cut the levels sorted by mean into n contiguous groups: choose the n - 1 cut points
 		options = []
 		for cuts in itertools.combinations(range(1, len(by_mean)), n - 1):
 			bounds = [0, *cuts, len(by_mean)]
 			cut = [by_mean[start:end] for start, end in zip(bounds, bounds[1:])]
-			options.append((_group_label(cut), _category_line(_transform(_groups, groups=cut))))
+			options.append((_group_label(groups=cut), _category_line(step=_transform(func=_groups, groups=cut))))
 		return options
 
 	menu = {
 		# groups
-		'one-hot': ('groups', [('', _category_line(_transform(_groups, groups=[[level] for level in levels])))]),
-		'2 groups': ('groups', groups(2)),
-		'3 groups': ('groups', groups(3)),
+		'one-hot': ('groups', [('', _category_line(step=_transform(func=_groups, groups=[[level] for level in levels])))]),
+		'2 groups': ('groups', groups(n=2)),
+		'3 groups': ('groups', groups(n=3)),
 
 		# piecewise linear
-		'hinge': ('piecewise linear', [(f't = {t:g}', _category_line(_transform(_hinge, t=t))) for t in thresholds]),
-		'cap': ('piecewise linear', [(f't = {t:g}', _category_line(_transform(_cap, t=t))) for t in thresholds]),
-		'floor': ('piecewise linear', [(f't = {t:g}', _category_line(_transform(_floor, t=t))) for t in thresholds]),
+		'hinge': ('piecewise linear', [(f't = {t:g}', _category_line(step=_transform(func=_hinge, t=t))) for t in thresholds]),
+		'cap': ('piecewise linear', [(f't = {t:g}', _category_line(step=_transform(func=_cap, t=t))) for t in thresholds]),
+		'floor': ('piecewise linear', [(f't = {t:g}', _category_line(step=_transform(func=_floor, t=t))) for t in thresholds]),
 	}
 	if period:
 		for waves in (1, 2):
 			menu[f'sine / cosine, {waves} wave{"" if waves == 1 else "s"}'] = (
-				'cyclic', [('', _category_line(_transform(_sin_cos, period=period, waves=waves)))]
+				'cyclic', [('', _category_line(step=_transform(func=_sin_cos, period=period, waves=waves)))]
 			)
 
 	return {name: candidate for name, candidate in menu.items() if candidate[1]}  # drop a candidate with no option, ex 3 groups of 2 levels
 
-def _rank(*blocks: np.ndarray) -> int:
+def _rank(*, blocks: list[np.ndarray]) -> int:
 	"""Number of columns of the blocks put side by side that are not a mix of the others."""
 	return int(np.linalg.matrix_rank(np.column_stack(blocks)))
 
-def _columns(model: Pipeline, X: np.ndarray) -> int:
+def _columns(*, model: Pipeline, X: np.ndarray) -> int:
 	"""Number of input columns a fitted pipeline uses, not counting the intercept or the control."""
 	# Count only the columns that add something: the rank of the columns next to the intercept's column of 1s, minus
 	# that column. Ex 5 one-hot bins always add up to 1, so one of them repeats the intercept and they count as 4.
 	# The control (every column of X after the feature, none for a continuous feature) is added to every fit, so its
 	# columns are taken out the same way.
 	ones = np.ones(len(X))
-	return _rank(ones, model[:-1].transform(X)) - _rank(ones, X[:, 1:])
+	return _rank(blocks=[ones, model[:-1].transform(X)]) - _rank(blocks=[ones, X[:, 1:]])
 
 def _xy(*, df: pd.DataFrame, feature: str, target: str, control: Optional[str] = None) -> tuple[np.ndarray, np.ndarray]:
 	"""Pull the inputs (X) and target (y) out of the DataFrame as plain number arrays.
@@ -375,12 +374,13 @@ def _xy(*, df: pd.DataFrame, feature: str, target: str, control: Optional[str] =
 	return data[inputs].to_numpy(dtype=float), data[target].to_numpy(dtype=float)
 
 def _fit_best(
+	*,
 	candidates: dict[str, tuple[Family, list[tuple[str, Pipeline]]]],
 	X: np.ndarray,
 	y: np.ndarray,
 ) -> list[ShapeFit]:
 	"""Fit every option of every candidate and keep the option with the highest R² of each."""
-	control_columns = _rank(np.ones(len(X)), X[:, 1:]) - 1  # 0 without a control
+	control_columns = _rank(blocks=[np.ones(len(X)), X[:, 1:]]) - 1  # 0 without a control
 
 	fits = []
 	for name, (family, options) in candidates.items():
@@ -396,7 +396,7 @@ def _fit_best(
 			name=name,
 			family=family,
 			setting=setting,
-			columns=_columns(model, X),
+			columns=_columns(model=model, X=X),
 			rows=len(y),
 			control_columns=control_columns,
 			r_squared=float(r_squared),
@@ -444,7 +444,7 @@ def shape_fits(*, df: pd.DataFrame, feature: str, target: str) -> list[ShapeFit]
 		One ShapeFit per candidate, in the order of the menu above.
 	"""
 	X, y = _xy(df=df, feature=feature, target=target)  # X is a table with the feature as its only column
-	return _fit_best(_candidates(X[:, 0]), X, y)
+	return _fit_best(candidates=_candidates(x=X[:, 0]), X=X, y=y)
 
 def category_reference_r2(
 	*,
@@ -467,10 +467,10 @@ def category_reference_r2(
 	"""
 	X, y = _xy(df=df, feature=feature, target=target, control=control)
 	candidates = {
-		'linear': ('piecewise linear', [('', _category_line('passthrough'))]),  # the code itself as one column (the family is never read)
-		'one-hot': _category_candidates(X[:, 0], y, period=None)['one-hot'],
+		'linear': ('piecewise linear', [('', _category_line(step='passthrough'))]),  # the code itself as one column (the family is never read)
+		'one-hot': _category_candidates(x=X[:, 0], y=y, period=None)['one-hot'],
 	}
-	return {fit.name: fit.adjusted_r_squared for fit in _fit_best(candidates, X, y)}
+	return {fit.name: fit.adjusted_r_squared for fit in _fit_best(candidates=candidates, X=X, y=y)}
 
 def category_fits(
 	*,
@@ -499,6 +499,6 @@ def category_fits(
 		one-hot (it fits exactly the same values).
 	"""
 	X, y = _xy(df=df, feature=feature, target=target, control=control)
-	fits = _fit_best(_category_candidates(X[:, 0], y, period=period), X, y)
+	fits = _fit_best(candidates=_category_candidates(x=X[:, 0], y=y, period=period), X=X, y=y)
 	one_hot = fits[0].columns  # one-hot is first in the menu
 	return [fit for fit in fits if fit.name == 'one-hot' or fit.columns != one_hot]

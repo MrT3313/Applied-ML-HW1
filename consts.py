@@ -1,6 +1,6 @@
 TEST_SIZE = 0.2
 
-# D: cross validation and the fixed lists each SGD setting is tried at
+# D and E: cross validation and the fixed lists each SGD setting is tried at
 SEED = 42  # every fold shuffle and every SGD model
 CARRY_MARGIN = 0.01  # the decision rule: an option replaces the baseline (the simpler option) only if its mean validation RMSE is at least 1% lower
 CV_SPLITS = 4  # the homework's four-fold cross validation
@@ -24,14 +24,13 @@ MEDIAN_COLOR = '#33b833'
 MEAN_COLOR = 'tab:orange'
 REFERENCE_COLOR = 'red'
 LOWESS_COLOR = '#159a6b'
-STEP_COLOR = '#862d2d'
 HINGE_COLOR = '#a655f6'
 SCATTER_COLOR = '#9e9e9e'  # neutral gray so the points recede behind the colored fit lines
 GROUP_COLORS = [DEFAULT_BLUE, '#5aa9f5']  # one per level of a `by` column, in level order (Year has two levels)
-BASELINE_COLOR = DEFAULT_BLUE  # D: the reference line (a model the others are compared with) on the parameter charts
-TRAIN_COLOR = DEFAULT_BLUE  # D: training rows of a fold, in the parameter searches and the loss curve
-VALIDATION_COLOR = '#d1661a'  # D: validation rows of a fold
-LOSS_METHOD_COLORS = {'warm_start': '#a655f6', 'refit': '#159a6b'}  # D: the homework's loop and the exact curve, on the chart that compares them
+BASELINE_COLOR = DEFAULT_BLUE  # D and E: the reference line (a model the others are compared with) on the parameter charts
+TRAIN_COLOR = DEFAULT_BLUE  # D and E: training rows of a fold, in the parameter searches and the loss curve
+VALIDATION_COLOR = '#d1661a'  # D and E: validation rows of a fold
+LOSS_METHOD_COLORS = {'warm_start': '#a655f6', 'refit': '#159a6b'}  # D and E: the homework's loop and the exact curve, on the chart that compares them
 # one per family of candidate shapes (utils/statistics/shape_fits.py), used by the scatter plot curves, the R² bars and
 # the marks on the categorical box plots
 FAMILY_COLORS = {

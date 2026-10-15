@@ -6,16 +6,24 @@ from matplotlib.ticker import MaxNLocator
 
 from consts import LOSS_METHOD_COLORS, TRAIN_COLOR, VALIDATION_COLOR
 
+LEGEND_BELOW = dict(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)  # under the axes, so it hides no fold's line
 
-def loss_curve(*, curve: pd.DataFrame, title: str = 'RMSE by epoch', log_x: bool = False, ymax: Optional[float] = None) -> plt.Axes:
+
+def loss_curve(
+	*,
+	curve: pd.DataFrame,
+	title: str = 'RMSE by epoch',
+	ymax: Optional[float] = None,
+	unit: Optional[str] = None,
+) -> plt.Axes:
 	"""Plot training and validation RMSE against the epoch: a thin line per fold and a thick line for their mean.
 
 	Args:
 		curve: Per fold, per epoch scores from PIPELINES.epoch_rmse.
 		title: Title of the chart.
-		log_x: Put the epochs on a log scale, so the first epochs stay readable next to a long run.
 		ymax: Highest RMSE shown when a run goes above it, so a run that diverges leaves the top of the chart instead of
 			flattening the rest. None shows everything.
+		unit: Unit of the RMSE, added to the y axis label when given.
 
 	Returns:
 		The Axes the chart was drawn on.
@@ -29,17 +37,14 @@ def loss_curve(*, curve: pd.DataFrame, title: str = 'RMSE by epoch', log_x: bool
 			ax.plot(fold.index.get_level_values('epoch'), fold, color=color, alpha=0.3, linewidth=0.8)
 		ax.plot(mean.index, mean[column], color=color, linewidth=2.5, label=f'{label} (thin: each of {n_folds} folds, thick: mean)')
 
-	if log_x:
-		ax.set_xscale('log')
-	else:
-		ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # epochs are whole numbers
-	ax.set_xlabel('Epoch' + (' (log scale)' if log_x else ''))
-	ax.set_ylabel('RMSE')
+	ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # epochs are whole numbers
+	ax.set_xlabel('Epoch')
+	ax.set_ylabel('RMSE' + (f' ({unit})' if unit else ''))
 	if ymax is not None and curve.to_numpy().max() > ymax:
 		ax.set_ylim(0.95 * curve.to_numpy().min(), ymax)  # only when a run goes above ymax; the others keep their own scale
 	ax.set_title(title)
 	ax.grid(alpha=0.3)
-	ax.legend()
+	ax.legend(**LEGEND_BELOW)
 
 	return ax
 
@@ -49,6 +54,7 @@ def loss_curve_comparison(
 	curves: dict[str, pd.DataFrame],
 	title: str = 'RMSE by epoch, mean of the folds',
 	ymax: Optional[float] = None,
+	unit: Optional[str] = None,
 ) -> plt.Axes:
 	"""Plot the mean training and validation RMSE of two loss curves of one model on one chart, so they can be read
 	against each other: a color per curve, solid for validation and dashed for training.
@@ -58,6 +64,7 @@ def loss_curve_comparison(
 			order they are drawn and listed in.
 		title: Title of the chart.
 		ymax: Highest RMSE shown when a curve goes above it, as in loss_curve. None shows everything.
+		unit: Unit of the RMSE, added to the y axis label when given.
 
 	Returns:
 		The Axes the chart was drawn on.
@@ -74,11 +81,11 @@ def loss_curve_comparison(
 
 	ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # epochs are whole numbers
 	ax.set_xlabel('Epoch')
-	ax.set_ylabel('RMSE, mean of the folds')
+	ax.set_ylabel('RMSE, mean of the folds' + (f' ({unit})' if unit else ''))
 	if ymax is not None and highest > ymax:
 		ax.set_ylim(0.95 * lowest, ymax)
 	ax.set_title(title)
 	ax.grid(alpha=0.3)
-	ax.legend()
+	ax.legend(**LEGEND_BELOW)
 
 	return ax

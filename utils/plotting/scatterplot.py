@@ -21,17 +21,15 @@ def scatterplot(
 	df: pd.DataFrame,
 	feature: str,
 	target: str,
-	lowess: bool = True,
 	fits: Sequence[ShapeFit] = (),
 	ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
-	"""Plot a scatter of target vs feature with a fitted linear line, an optional LOWESS curve, and optional candidate shapes.
+	"""Plot a scatter of target vs feature with a fitted linear line, a LOWESS curve, and optional candidate shapes.
 
 	Args:
 		df: DataFrame holding both columns. Rows missing either value are dropped.
 		feature: Column plotted on the x axis.
 		target: Column plotted on the y axis.
-		lowess: Draw a LOWESS curve, which follows the local average without assuming a shape.
 		fits: Candidate shapes (from shape_fits) to draw, each in its family's color and line style.
 		ax: Axes to draw on. A new figure and axes are created when omitted.
 
@@ -59,10 +57,10 @@ def scatterplot(
 		label=f'Linear: slope = {fit.slope:.2f}, r = {fit.rvalue:.2f}, R² = {fit.rvalue**2:.2f}',
 	)
 
-	if lowess:
-		fitted, r_squared = lowess_fit(x=x, y=y)
-		order = np.argsort(x)  # draw the curve from left to right
-		ax.plot(x[order], fitted[order], color=LOWESS_COLOR, lw=2, label=f'LOWESS: R² = {r_squared:.2f}')
+	# LOWESS follows the local average without assuming a shape
+	fitted, r_squared = lowess_fit(x=x, y=y)
+	order = np.argsort(x)  # draw the curve from left to right
+	ax.plot(x[order], fitted[order], color=LOWESS_COLOR, lw=2, label=f'LOWESS: R² = {r_squared:.2f}')
 
 	for shape in fits:
 		ax.plot(

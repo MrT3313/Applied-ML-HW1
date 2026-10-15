@@ -1,7 +1,4 @@
-from pandas import Series
-
-
-def rule_of_thumb__kurtosis(*, series: Series= None, value:float = None):
+def rule_of_thumb__kurtosis(*, value: float):
 	"""
 		Kurtosis measures tail heaviness (how prone the data is to extreme outliers), not peakedness (Westfall 2014)
 		pandas .kurt() reports EXCESS kurtosis (Fisher's definition, kurtosis - 3), so normal tails score 0, not 3
@@ -17,14 +14,7 @@ def rule_of_thumb__kurtosis(*, series: Series= None, value:float = None):
 			Near 0 means the TAILS look normal, not that the distribution is normal
 			(skewed, non-normal distributions can also score 0)
 	"""
-	assert (series is not None) or (value is not None)
-
-	if series is not None:
-		kurt = series.kurt()
-	if value is not None:
-		kurt = value
-
-	match kurt:
+	match value:
 		case k if k < -1.0:
 			return "Platykurtic (light tails, fewer outliers)"
 		case k if k <= 1.0:

@@ -10,6 +10,7 @@ def scatter_matrix(
 	*,
 	df: pd.DataFrame,
 	labels: Optional[dict[str, str]] = None,
+	title: Optional[str] = None,
 ) -> sns.PairGrid:
 	"""Plot a scatter of every pair of numeric columns, with each column's KDE curve on the diagonal.
 
@@ -17,6 +18,7 @@ def scatter_matrix(
 		df: DataFrame to plot. Non-numeric columns are skipped, and missing values are dropped per pair.
 		labels: Maps column names to the shorter axis labels shown on the grid. Columns not in the map keep
 			their own name. When omitted, the full column names are used.
+		title: Title drawn above the whole grid.
 
 	Returns:
 		The seaborn PairGrid. Its Figure is grid.figure and its 2D array of Axes is grid.axes.
@@ -29,6 +31,10 @@ def scatter_matrix(
 
 	# seaborn sizes each panel, so the figure would grow with the column count
 	grid.figure.set_size_inches(FIGSIZE)
-	grid.tight_layout()
+
+	if title:
+		grid.figure.suptitle(title)
+
+	grid.tight_layout()  # after the title, so the grid makes room for it
 
 	return grid

@@ -4,11 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from consts import DEFAULT_BLUE, FAMILY_COLORS, GROUP_COLORS, HINGE_COLOR, MEAN_COLOR, MEDIAN_COLOR, STEP_COLOR
+from consts import DEFAULT_BLUE, FAMILY_COLORS, GROUP_COLORS, MEAN_COLOR, MEDIAN_COLOR
 from utils.statistics.shape_fits import ShapeFit
-
-# boxes split at a step or hinge threshold take the color of that fit's line on the scatter plot
-THRESHOLD_COLORS = {'step': STEP_COLOR, 'hinge': HINGE_COLOR}
 
 
 def draw_boxes(
@@ -97,29 +94,23 @@ def box_plot_vs_target(
 	df: pd.DataFrame,
 	feature: str,
 	target: str,
-	thresholds: Optional[dict[str, float]] = None,
-	levels: bool = False,
 	by: Optional[str] = None,
 	fits: Sequence[ShapeFit] = (),
 	ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
-	"""Plot a vertical box plot of the target for all rows and for the groups the feature splits them into.
-
-	A continuous feature splits the rows at thresholds, a categorical feature splits them by level.
+	"""Plot a vertical box plot of the target for all rows and for each level of a categorical feature, with the level
+	means R² in the title.
 
 	Args:
 		df: DataFrame holding the columns. Rows missing any of them are dropped.
 		feature: Column used to split the rows into groups.
 		target: Column whose distribution is plotted for each group.
-		thresholds: Feature value of each split keyed by its name, such as 'step' or 'hinge'. Every split adds two boxes:
-			rows with feature < threshold, then the rest. When omitted, no threshold boxes are drawn.
-		levels: Add one box per level of a categorical feature, and put the level means R² in the title.
 		by: Second categorical column that splits each level into one box per level of it that has rows, one color
-			per level of it. Only used when `levels` is True.
+			per level of it. The tick labels are then short (ex '1 Y0' and 'n=31'), so the boxes of a 12 level feature
+			fit side by side.
 		fits: Candidate encodings (from category_fits) to draw, each as one wide mark in its family's color on every
 			level box (not the 'all' box) at the target it predicts for that box. With `by`, each fit predicts with
-			the box's `by` level as the control, so it must have been fitted with control=by. Only used when `levels`
-			is True.
+			the box's `by` level as the control, so it must have been fitted with control=by.
 		ax: Axes to draw on. A new figure and axes are created when omitted.
 
 	Returns:
@@ -128,37 +119,33 @@ def box_plot_vs_target(
 	data = df[[feature, target] + ([by] if by else [])].dropna()  # boxplot returns NaN stats for a group containing NaN
 	groups = {'all': data[target]}
 	colors = [DEFAULT_BLUE]
-	for name, threshold in (thresholds or {}).items():
-		groups[f'{name}\n< {threshold:g}'] = data.loc[data[feature] < threshold, target]
-		groups[f'{name}\n>= {threshold:g}'] = data.loc[data[feature] >= threshold, target]
-		colors += [THRESHOLD_COLORS.get(name, DEFAULT_BLUE)] * 2  # one color for both sides of the split
 
 	title = f'{target} vs {feature} Box Plot'
 	level_boxes = []  # the (level, by level) of each level box, in the order drawn, for the fits' marks
-	if levels and by:
+	if by:
 		by_colors = dict(zip(sorted(data[by].unique()), GROUP_COLORS))  # the same color as this by level's bars in count_plot
 		for (level, by_level), values in data.groupby([feature, by])[target]:  # only the pairs that have rows
-			groups[f'{level}\n{by} {by_level}'] = values
+			groups[f'{level} {by[0]}{by_level}'] = values  # ex '1 Y0': level 1 at Year 0
 			colors.append(by_colors[by_level])
 			level_boxes.append((level, by_level))
 		title = f'{target} vs {feature} and {by} Box Plot'
-	elif levels:
+	else:
 		for level, values in data.groupby(feature)[target]:
 			groups[str(level)] = values
 			colors.append(DEFAULT_BLUE)
 			level_boxes.append((level, None))
 
-	if levels:
-		# level means R²: the share of the target's variation explained by predicting every row with the mean of its box
-		sse = sum(((values - values.mean()) ** 2).sum() for values in list(groups.values())[1:])  # every box but 'all'
-		sst = ((data[target] - data[target].mean()) ** 2).sum()
-		title += f' (level means R² = {1 - sse / sst:.2f})'
+	# level means R²: the share of the target's variation explained by predicting every row with the mean of its box
+	sse = sum(((values - values.mean()) ** 2).sum() for values in list(groups.values())[1:])  # every box but 'all'
+	sst = ((data[target] - data[target].mean()) ** 2).sum()
+	title += f' (level means R² = {1 - sse / sst:.2f})'
 
 	if ax is None:
 		_, ax = plt.subplots()
 
 	parts = draw_boxes(
-		groups={f'{label}\n(n = {len(values)})': values for label, values in groups.items()},
+		# with `by` there are twice as many boxes, so the row count is written short to keep the labels apart
+		groups={f'{label}\n' + (f'n={len(values)}' if by else f'(n = {len(values)})'): values for label, values in groups.items()},
 		ax=ax,
 		vertical=True,
 		colors=colors,
@@ -170,7 +157,7 @@ def box_plot_vs_target(
 	# Each fit's prediction for every level box, as a flat mark across the box. It is a little wider than the box (0.5),
 	# so its ends also show against the white background, and it shrinks with the boxes when there are many of them.
 	positions = np.arange(len(groups) - len(level_boxes) + 1, len(groups) + 1)  # boxplot places the boxes at 1, 2, 3, ...
-	for shape in fits if levels else ():
+	for shape in fits:
 		predicted = shape.predict(
 			x=[level for level, _ in level_boxes],
 			control=[by_level for _, by_level in level_boxes] if by else None,
@@ -185,7 +172,7 @@ def box_plot_vs_target(
 		))
 
 	ax.set_title(title)
-	ax.set_xlabel(feature)  # the thresholds or levels in the tick labels are values of the feature
+	ax.set_xlabel(feature)  # the levels in the tick labels are values of the feature
 	ax.set_ylabel(target)
 
 	# Legend centered below the axes, outside the plot area

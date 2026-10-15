@@ -21,8 +21,8 @@ def build_pipeline(
 ) -> TransformedTargetRegressor:
 	"""The unfitted pipeline of one experiment: the imputer (when given), each attribute shaped as in shapes (keyed by
 	attribute; attributes not named stay raw), every attribute's columns standardized, then the model. The target is
-	standardized too and predictions come back in its units, so SGD's step and tol suit any target scale. Every step is
-	fit on the training rows only, and fitting works on copies of the steps.
+	standardized too and predictions come back in its units, so the penalty's alpha and SGD's tol mean the same for any
+	target scale. Every step is fit on the training rows only, and fitting works on copies of the steps.
 
 	Above degree 1 the standardized columns of the attributes in expand (every attribute when expand is None) are
 	expanded into every product of up to degree of them (PolynomialFeatures, no column of 1s since the model fits its

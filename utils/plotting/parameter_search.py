@@ -15,6 +15,7 @@ def parameter_search(
 	reference: Optional[tuple[str, pd.DataFrame]] = None,
 	ymax: Optional[float] = None,
 	title: Optional[str] = None,
+	unit: Optional[str] = None,
 ) -> plt.Axes:
 	"""Plot the RMSE of every value tried for one parameter, fold by fold.
 
@@ -30,6 +31,7 @@ def parameter_search(
 		ymax: Highest RMSE shown. A run that diverges can reach RMSEs that flatten every other value against the axis:
 			anything above ymax is drawn at ymax as a triangle. None shows everything.
 		title: Title of the chart. When omitted, it names the parameter.
+		unit: Unit of the RMSE, added to the y axis label when given.
 
 	Returns:
 		The Axes the chart was drawn on.
@@ -57,7 +59,7 @@ def parameter_search(
 	if ymax is not None:
 		above = [(x[i], ymax) for i in validation.columns for score in validation[i] if score > ymax]
 		if above:
-			ax.plot(*zip(*above), '^', color='black', markersize=7, label=f'above {ymax:g} (off the chart)')
+			ax.plot(*zip(*above), '^', color='black', markersize=7, label=f'above {ymax:.4g} (off the chart)')
 	if reference is not None:
 		name, run = reference
 		ax.axhline(run['validation rmse'].mean(), color=BASELINE_COLOR, linestyle=':', linewidth=1.5, label=f'{name}, validation mean')
@@ -67,7 +69,7 @@ def parameter_search(
 	else:
 		ax.set_xticks(x)
 	ax.set_xlabel(parameter + (' (log scale)' if log_x else ''))
-	ax.set_ylabel('RMSE')
+	ax.set_ylabel('RMSE' + (f' ({unit})' if unit else ''))
 	ax.set_title(title or f'{parameter}: RMSE on every fold')
 	ax.grid(alpha=0.3)
 	ax.legend(fontsize='small')

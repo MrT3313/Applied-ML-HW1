@@ -1,7 +1,6 @@
 from typing import Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from consts import R2_GAIN_MARGIN
@@ -23,58 +22,45 @@ def continuous_single_feature_plots(
 	df: pd.DataFrame,
 	feature: str,
 	target: str,
-	bins: int = 30,
-	shapes: bool = True,
-	lowess: bool = True,
 ):
 	"""Plot one feature's histogram with a normal overlay, its normal Q-Q plot, its box plot, its scatter against the
 	target, and the R² of every candidate shape of it.
+
+	Every candidate shape (from shape_fits) gets its R² gain over the straight line as a bar, and the scatter plot
+	shows the straight line, LOWESS and the best shape of each family when it beats the straight line's R² by at least
+	R2_GAIN_MARGIN.
 
 	Args:
 		df: DataFrame holding both columns.
 		feature: Column to plot.
 		target: Column the feature is plotted against in the scatter plot and the candidate shapes are fitted to.
-		bins: Number of histogram bins.
-		shapes: Fit every candidate shape (from shape_fits), plot each one's R² gain over the straight line as a bar,
-			and draw on the scatter plot the best shape of each family when it beats the straight line's R² by at least
-			R2_GAIN_MARGIN. When False, the bars are left out and the scatter plot shows the straight line and LOWESS only.
-		lowess: Draw a LOWESS curve on the scatter plot.
 
 	Returns:
 		The Figure, its Axes keyed by chart name ([histogram, qq], [box_plot, scatterplot], [shape_r2]), and the
-		candidate shapes (None unless shapes is True).
+		candidate shapes.
 	"""
 	mosaic = [
 		['histogram', 'qq'],
 		['box_plot', 'scatterplot'],
+		['shape_r2', 'shape_r2'],  # one chart spanning both columns
 	]
-	height_ratios = [2, 2]
-	fits, drawn = None, []
+	fits = shape_fits(df=df, feature=feature, target=target)
+	references = reference_r2(df=df, feature=feature, target=target)
 
-	if shapes:
-		mosaic.append(['shape_r2', 'shape_r2'])  # one chart spanning both columns
-		height_ratios.append(2)
-		fits = shape_fits(df=df, feature=feature, target=target)
-		references = reference_r2(df=df, feature=feature, target=target)
+	# the best shape of each family, kept only when it beats the straight line by at least the margin
+	drawn = []
+	for family in dict.fromkeys(shape.family for shape in fits):  # the families in the fits, in menu order
+		best = max((shape for shape in fits if shape.family == family), key=lambda shape: shape.r_squared)
+		if best.r_squared - references['linear'] >= R2_GAIN_MARGIN:
+			drawn.append(best)
 
-		# the best shape of each family, kept only when it beats the straight line by at least the margin
-		for family in dict.fromkeys(shape.family for shape in fits):  # the families in the fits, in menu order
-			best = max((shape for shape in fits if shape.family == family), key=lambda shape: shape.r_squared)
-			if best.r_squared - references['linear'] >= R2_GAIN_MARGIN:
-				drawn.append(best)
+	fig, axes = plt.subplot_mosaic(mosaic, figsize=(14, 18))
 
-	fig, axes = plt.subplot_mosaic(
-		mosaic,
-		figsize=(14, 6 * sum(height_ratios) / 2),
-		height_ratios=height_ratios,
-	)
-
-	histogram(series=df[feature], bins=bins, ax=axes['histogram'])
+	histogram(series=df[feature], ax=axes['histogram'])
 	qq(series=df[feature], ax=axes['qq'])
 	box_plot(series=df[feature], ax=axes['box_plot'])
-	scatterplot(df=df, feature=feature, target=target, lowess=lowess, fits=drawn, ax=axes['scatterplot'])
-	if shapes:
-		shape_r2_bars(feature=feature, fits=fits, references=references, ax=axes['shape_r2'])
+	scatterplot(df=df, feature=feature, target=target, fits=drawn, ax=axes['scatterplot'])
+	shape_r2_bars(feature=feature, fits=fits, references=references, ax=axes['shape_r2'])
 
 	fig.tight_layout()
 
@@ -87,7 +73,6 @@ def categorical_single_feature_plots(
 	target: str,
 	by: Optional[str] = None,
 	period: Optional[float] = None,
-	shapes: bool = True,
 ):
 	"""Plot one categorical feature's row count per level above a box plot of the target for each level, and the
 	adjusted R² of every candidate encoding of it.
@@ -100,10 +85,11 @@ def categorical_single_feature_plots(
 			to every candidate encoding as a control. When omitted, the levels are not split.
 		period: Number of levels in one full cycle, ex 12 for Month, which adds the cyclic candidates. When omitted,
 			they are left out.
-		shapes: Fit every candidate encoding (from category_fits), plot each one's adjusted R² gain over the straight
-			line as a bar, and mark on the box plot the best encoding of each family when it beats the straight line's
-			adjusted R² by at least R2_GAIN_MARGIN. Skipped for a feature with 2 levels: every encoding of it is the
-			same 0/1 column, so there is nothing to compare. When False, only the first two charts are drawn.
+
+	Every candidate encoding (from category_fits) gets its adjusted R² gain over the straight line as a bar, and the
+	box plot marks the best encoding of each family when it beats the straight line's adjusted R² by at least
+	R2_GAIN_MARGIN. Both are skipped for a feature with 2 levels: every encoding of it is the same 0/1 column, so there
+	is nothing to compare, and only the first two charts are drawn.
 
 	Returns:
 		The Figure and its Axes keyed by chart name ([count_plot], [box_plot_vs_target], [shape_r2]).
@@ -114,8 +100,8 @@ def categorical_single_feature_plots(
 	]
 	drawn = []
 
-	shapes = shapes and df[feature].nunique() > 2
-	if shapes:
+	encodings = df[feature].nunique() > 2  # with 2 levels every encoding is the same 0/1 column
+	if encodings:
 		mosaic.append(['shape_r2'])
 		fits = category_fits(df=df, feature=feature, target=target, period=period, control=by)
 		references = category_reference_r2(df=df, feature=feature, target=target, control=by)
@@ -129,8 +115,8 @@ def categorical_single_feature_plots(
 	fig, axes = plt.subplot_mosaic(mosaic, figsize=(14, 5 * len(mosaic)))
 
 	count_plot(df=df, feature=feature, by=by, ax=axes['count_plot'])
-	box_plot_vs_target(df=df, feature=feature, target=target, levels=True, by=by, fits=drawn, ax=axes['box_plot_vs_target'])
-	if shapes:
+	box_plot_vs_target(df=df, feature=feature, target=target, by=by, fits=drawn, ax=axes['box_plot_vs_target'])
+	if encodings:
 		shape_r2_bars(
 			feature=feature,
 			fits=fits,
@@ -147,7 +133,6 @@ def categorical_single_feature_plots(
 def continuous_distribution_plots(
 	*,
 	series: pd.Series,
-	bins: int = 30,
 ):
 	"""Plot one column's histogram with a normal overlay beside its normal Q-Q plot.
 
@@ -155,14 +140,13 @@ def continuous_distribution_plots(
 
 	Args:
 		series: Numeric values to plot.
-		bins: Number of histogram bins.
 
 	Returns:
 		The Figure and its array of 2 Axes ([histogram, Q-Q]).
 	"""
 	fig, axes = plt.subplots(1, 2, figsize=(14, 5.5))
 
-	histogram(series=series, bins=bins, ax=axes[0])
+	histogram(series=series, ax=axes[0])
 	qq(series=series, ax=axes[1])
 
 	fig.tight_layout()

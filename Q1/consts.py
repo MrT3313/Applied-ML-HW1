@@ -18,4 +18,5 @@ COLUMNS = {
 	'NA': {"col": 'Negative affect', "short_name": "Neg affect"},
 }
 TARGET = COLUMNS['LL']['col']
+TARGET_UNIT = 'Life Ladder points'  # the unit of every RMSE, for the D and E chart labels
 SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
