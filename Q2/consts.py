@@ -27,3 +27,5 @@ SHORT_NAMES = {col: c['short_name'] for col, c in COLUMNS.items()}
 TARGET = SHORT_NAMES["cnt"]
 # The continuous attributes, used by the categorical interaction tables.
 CONTINUOUS = ['Temp', 'FeelsLike', 'Humidity', 'Wind']
+
+CV_TEST_SIZE = 46  # D: validation days in each of the 4 time-ordered folds, so every fold trains on some 2012 days

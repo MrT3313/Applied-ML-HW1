@@ -142,6 +142,16 @@ class ShapeFit:
 		"""R² minus a charge for every column, the control's included (see adjusted_r2)."""
 		return adjusted_r2(r_squared=self.r_squared, rows=self.rows, columns=self.columns + self.control_columns)
 
+	@property
+	def transformer(self):
+		"""The shape step alone, without the linear regression after it, to put in a pipeline (ex the D notebooks).
+
+		It takes the feature as one column and returns the shape's columns, with the searched setting frozen in.
+		"""
+		first = self.model[0]
+		# a categorical fit wraps its step in a ColumnTransformer that passes the control through (see _category_line)
+		return first.transformers[0][1] if isinstance(first, ColumnTransformer) else self.model[:-1]
+
 	def predict(self, *, x: np.ndarray, control: Optional[np.ndarray] = None) -> np.ndarray:
 		"""Evaluate the fit at x, with the control at the given values when the fit has one."""
 		X = np.asarray(x, dtype=float).reshape(-1, 1)
@@ -177,7 +187,7 @@ def _power(x: np.ndarray, *, power: float, shift: float, reflect: bool) -> np.nd
 
 def _yeo_johnson(x: np.ndarray, *, lmbda: float) -> np.ndarray:
 	"""Yeo-Johnson power transform at the power lmbda, which also works for values at or below 0."""
-	return stats.yeojohnson(x.ravel(), lmbda=lmbda).reshape(-1, 1)
+	return stats.yeojohnson(np.asarray(x).ravel(), lmbda=lmbda).reshape(-1, 1)  # asarray: a pipeline can pass a DataFrame
 
 def _hinge(x: np.ndarray, *, t: float) -> np.ndarray:
 	"""x and how far x is past t (0 below it), so the slope can change at t."""
@@ -205,7 +215,7 @@ def _groups(x: np.ndarray, *, groups: list[list[float]]) -> np.ndarray:
 	# The first group is the baseline: its rows are 0 in every column and the intercept fits their mean. With a column
 	# for every group, the columns would add up to the intercept's column of 1s, and LinearRegression then fits a little
 	# worse than it should (sklearn 1.3 gives a lower, even negative, R² for a Weekday one-hot built that way).
-	return np.column_stack([np.isin(x.ravel(), group) for group in groups[1:]]).astype(float)
+	return np.column_stack([np.isin(np.asarray(x).ravel(), group) for group in groups[1:]]).astype(float)
 
 def _drop_first(columns: np.ndarray) -> np.ndarray:
 	"""Every column but the first, so 0/1 bin columns no longer add up to the intercept's column of 1s (see _groups)."""
