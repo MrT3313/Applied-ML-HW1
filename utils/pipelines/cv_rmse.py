@@ -8,7 +8,7 @@ from sklearn.model_selection import cross_validate
 Folds = list[tuple[np.ndarray, np.ndarray]]
 
 
-def final_model(pipeline: BaseEstimator) -> BaseEstimator:
+def final_model(*, pipeline: BaseEstimator) -> BaseEstimator:
 	"""The model at the end of a fitted pipeline from build_pipeline (or of a plain Pipeline, or the model itself)."""
 	if isinstance(pipeline, TransformedTargetRegressor):
 		pipeline = pipeline.regressor_
@@ -20,7 +20,7 @@ def cv_rmse(*, pipeline: BaseEstimator, X: pd.DataFrame, y: pd.Series, folds: Fo
 	the validation rows.
 
 	Every pipeline scored on the same folds is scored on the same rows, so fold k of one result can be compared with
-	fold k of another (see STATISTICS.fold_difference).
+	fold k of another.
 
 	Args:
 		pipeline: The pipeline to cross validate. It is cloned for each fold.
@@ -44,7 +44,7 @@ def cv_rmse(*, pipeline: BaseEstimator, X: pd.DataFrame, y: pd.Series, folds: Fo
 		index=pd.RangeIndex(1, len(folds) + 1, name='fold'),
 	)
 
-	models = [final_model(fitted) for fitted in scores['estimator']]
+	models = [final_model(pipeline=fitted) for fitted in scores['estimator']]
 	if hasattr(models[0], 'n_iter_'):
 		out['epochs'] = [model.n_iter_ for model in models]
 

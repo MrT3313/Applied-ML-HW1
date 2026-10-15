@@ -43,13 +43,13 @@ def parameter_search(
 	mean = validation.mean()
 	train_mean = pd.Series([runs[value]['train rmse'].mean() for value in values])
 
-	def shown(scores: pd.Series) -> pd.Series:
+	def shown(*, scores: pd.Series) -> pd.Series:
 		return scores.clip(upper=ymax)  # no change when ymax is None
 
 	for i, (_, fold) in enumerate(validation.iterrows()):
-		ax.plot(x, shown(fold), '-o', color=VALIDATION_COLOR, alpha=0.25, linewidth=0.8, markersize=3, label='validation, each fold' if i == 0 else None)
-	ax.plot(x, shown(mean), '-o', color=VALIDATION_COLOR, linewidth=2.5, label='validation, mean')
-	ax.plot(x, shown(train_mean), '--x', color=TRAIN_COLOR, linewidth=2, label='train, mean')
+		ax.plot(x, shown(scores=fold), '-o', color=VALIDATION_COLOR, alpha=0.25, linewidth=0.8, markersize=3, label='validation, each fold' if i == 0 else None)
+	ax.plot(x, shown(scores=mean), '-o', color=VALIDATION_COLOR, linewidth=2.5, label='validation, mean')
+	ax.plot(x, shown(scores=train_mean), '--x', color=TRAIN_COLOR, linewidth=2, label='train, mean')
 
 	best = int(mean.idxmin())
 	ax.plot(x[best], mean[best], '*', color='black', markersize=14, label=f'lowest mean: {values[best]}')

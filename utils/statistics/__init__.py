@@ -2,7 +2,6 @@ from utils.statistics.continuous_statistics_df import continuous_statistics_df
 from utils.statistics.categorical_statistics_df import categorical_statistics_df, interaction_r2_df
 from utils.statistics.collinearity_df import collinearity_df
 from utils.statistics.r2_gain_df import r2_gain_df
-from utils.statistics.fold_difference import FoldDifference, fold_difference
 from utils.statistics.results_df import results_df
 from utils.statistics.shape_fits import adjusted_r2, category_fits, category_reference_r2, reference_r2, shape_fits
 
@@ -17,7 +16,5 @@ __all__ = [
 	'adjusted_r2',
 	'category_fits',
 	'category_reference_r2',
-	'FoldDifference',
-	'fold_difference',
 	'results_df',
 ]

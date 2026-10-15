@@ -14,11 +14,9 @@ from utils.plotting.box_plot import box_plot, box_plot_vs_target
 from utils.plotting.count_plot import count_plot
 from utils.plotting.scatter_matrix import scatter_matrix
 from utils.plotting.correlation_matrix import correlation_matrix
-from utils.plotting.fold_comparison import fold_comparison
-from utils.plotting.fold_deltas import fold_deltas
 from utils.plotting.parameter_search import parameter_search
 from utils.plotting.parameter_cross import parameter_cross
-from utils.plotting.loss_curve import loss_curve
+from utils.plotting.loss_curve import loss_curve, loss_curve_comparison
 
 def continuous_single_feature_plots(
 	*,

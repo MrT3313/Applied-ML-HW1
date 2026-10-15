@@ -19,5 +19,3 @@ COLUMNS = {
 }
 TARGET = COLUMNS['LL']['col']
 SHORT_NAMES = {c['col']: c['short_name'] for c in COLUMNS.values()}
-
-CV_REPEATS = 5  # D: the four folds are cut 5 times, each time from a new shuffle, for 20 folds
