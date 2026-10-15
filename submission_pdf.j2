@@ -1,0 +1,18 @@
+{#- nbconvert's webpdf template, plus line wrapping and smaller table text so long code lines and wide tables are not
+    cut off at the page edge. -#}
+{%- extends 'webpdf/index.pdf.j2' -%}
+
+{% block extra_css %}
+<style type="text/css">
+  pre {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+  }
+  .jp-RenderedHTMLCommon table, .jp-RenderedHTMLCommon th, .jp-RenderedHTMLCommon td {
+    font-size: 10px;
+  }
+  .jp-RenderedHTMLCommon th, .jp-RenderedHTMLCommon td {
+    padding: 0.4em 0.4em;
+  }
+</style>
+{% endblock extra_css %}
