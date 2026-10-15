@@ -9,6 +9,10 @@ ETA0S = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]  # the starting step size
 ALPHAS = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 10]  # penalty strength
 L1_RATIOS = [0.1, 0.15, 0.3, 0.5, 0.7, 0.9]  # Elastic Net's share of L1 in the penalty
 
+# E: polynomial regression
+DEGREES = [1, 2, 3, 4]  # polynomial degrees searched
+TOLS = [1e-2, 1e-3, 1e-4, 1e-5, 1e-6]  # stopping tolerance: the drop in training loss (standardized target) an epoch must beat
+
 R2_GAIN_MARGIN = 0.01  # smallest R² gain for a candidate shape to be drawn on the B plots, or a row shown in the C R2 Gain tables
 COLLINEARITY_MIN_R = 0.3  # smallest size of r between two attributes for their pair to be shown in the C collinearity table
 

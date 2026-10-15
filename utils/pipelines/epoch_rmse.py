@@ -1,4 +1,5 @@
 import warnings
+from typing import Union
 
 import pandas as pd
 from sklearn.base import clone
@@ -15,7 +16,7 @@ def epoch_rmse(
 	X: pd.DataFrame,
 	y: pd.Series,
 	folds: Folds,
-	epochs: int,
+	epochs: Union[int, list[int]],
 ) -> pd.DataFrame:
 	"""Training and validation RMSE of an SGD pipeline from build_pipeline after each epoch k, on every fold: a fresh fit
 	with max_iter=k and the same seed, which is exactly the first k epochs of the full fit (flat once tol stops it).
@@ -25,10 +26,11 @@ def epoch_rmse(
 		X: The attributes.
 		y: The target, with the same rows as X.
 		folds: The folds, as row positions.
-		epochs: Number of epochs to show on each fold.
+		epochs: The epochs to score on each fold: a count (every epoch from 1 to it), or a list of epoch numbers in
+			increasing order. Epoch k costs a fit of k epochs, so a long run is scored on a spaced list (ex log spaced).
 
 	Returns:
-		One row per fold and epoch (index levels "fold" and "epoch", both counted from 1), with the columns
+		One row per fold and scored epoch (index levels "fold" and "epoch", both counted from 1), with the columns
 		"train rmse" and "validation rmse".
 	"""
 	rows = []
@@ -37,7 +39,7 @@ def epoch_rmse(
 		X_validation, y_validation = X.iloc[validation], y.iloc[validation]
 
 		stopped = False
-		for epoch in range(1, epochs + 1):
+		for epoch in (range(1, epochs + 1) if isinstance(epochs, int) else epochs):
 			if not stopped:
 				with warnings.catch_warnings():
 					warnings.simplefilter('ignore', ConvergenceWarning)  # max_iter=epoch ends the fit early on purpose

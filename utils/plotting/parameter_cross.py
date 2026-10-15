@@ -58,6 +58,8 @@ def parameter_cross(
 
 	if log_x:
 		ax.set_xscale('log')
+	else:
+		ax.set_xticks(sorted({pair[1] for pair in runs}))
 	ax.set_xlabel(x + (' (log scale)' if log_x else ''))
 	ax.set_ylabel('Mean validation RMSE')
 	ax.set_title(f'{lines} × {x}: mean validation RMSE')
