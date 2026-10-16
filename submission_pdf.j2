@@ -1,9 +1,16 @@
-{#- nbconvert's webpdf template, plus line wrapping and smaller table text so long code lines and wide tables are not
-    cut off at the page edge. -#}
+{#- nbconvert's webpdf template, plus smaller text overall, line wrapping and smaller table text so long code lines and
+    wide tables are not cut off at the page edge. -#}
 {%- extends 'webpdf/index.pdf.j2' -%}
 
 {% block extra_css %}
 <style type="text/css">
+  /* JupyterLab's base font sizes (14px text, 13px code and prompts), smaller. Headings and other sizes are set
+     relative to these, so they shrink with them. !important because the theme's own :root comes after this block. */
+  :root {
+    --jp-content-font-size1: 12px !important;
+    --jp-code-font-size: 11px !important;
+    --jp-ui-font-size1: 11px !important;
+  }
   pre {
     white-space: pre-wrap !important;
     overflow-wrap: anywhere;
